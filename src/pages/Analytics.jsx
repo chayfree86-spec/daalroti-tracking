@@ -55,14 +55,13 @@ const Analytics = ({ entries }) => {
 
     const monthlyData = Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
     
-    // Format pie data
-    const pieData = Object.entries(categoryMap.spend)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+    const pieData = [
+      { name: 'Income', value: totalIncome },
+      { name: 'Spend', value: totalSpend }
+    ].filter(item => item.value > 0);
 
     return { monthlyData, pieData, totalIncome, totalSpend };
-  }, [entries]);
+  }, [entries, timeRange]);
 
   if (!stats) {
     return (
@@ -199,42 +198,56 @@ const Analytics = ({ entries }) => {
           </div>
         </div>
 
-        {/* Expense Categories Pie Chart */}
+        {/* Flow Distribution Donut Chart */}
         <div className="bg-white p-8 rounded-[2.5rem] shadow-premium border border-slate-100 space-y-8">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-black text-slate-800 tracking-tight">Expense Breakdown</h3>
+            <h3 className="text-xl font-black text-slate-800 tracking-tight">Flow Distribution</h3>
             <PieIcon size={20} className="text-slate-300" />
           </div>
           
-          <div className="h-[300px] w-full flex items-center justify-center relative">
-            <svg width="220" height="220" viewBox="0 0 220 220" className="transform -rotate-90 drop-shadow-xl">
+          <div className="h-[320px] w-full flex items-center justify-center relative group">
+            {/* Center Info */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
+              <span className="text-4xl font-black text-slate-800 tracking-tighter leading-none">
+                {(() => {
+                  if (stats.totalIncome === 0) return '0%';
+                  const ratio = Math.round((stats.totalSpend / stats.totalIncome) * 100);
+                  return `${ratio}%`;
+                })()}
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mt-2">
+                Spend Ratio
+              </span>
+            </div>
+
+            <svg width="240" height="240" viewBox="0 0 100 100" className="transform -rotate-90 filter drop-shadow-2xl relative z-10">
               {(() => {
-                let cumulativePercent = 0;
                 const total = stats.pieData.reduce((acc, curr) => acc + curr.value, 0);
+                let currentOffset = 0;
 
                 return stats.pieData.map((entry, index) => {
-                  const percent = entry.value / total;
-                  const startX = 110 + 100 * Math.cos(2 * Math.PI * cumulativePercent);
-                  const startY = 110 + 100 * Math.sin(2 * Math.PI * cumulativePercent);
-                  cumulativePercent += percent;
-                  const endX = 110 + 100 * Math.cos(2 * Math.PI * cumulativePercent);
-                  const endY = 110 + 100 * Math.sin(2 * Math.PI * cumulativePercent);
-                  const largeArcFlag = percent > 0.5 ? 1 : 0;
-                  const pathData = `M 110 110 L ${startX} ${startY} A 100 100 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+                  const percentage = (entry.value / total) * 100;
+                  const strokeDasharray = `${percentage} ${100 - percentage}`;
+                  const strokeDashoffset = -currentOffset;
+                  currentOffset += percentage;
 
                   return (
-                    <path
+                    <circle
                       key={entry.name}
-                      d={pathData}
-                      fill={COLORS[index % COLORS.length]}
-                      className="hover:opacity-80 transition-opacity cursor-pointer"
-                    >
-                      <title>{`${entry.name}: ${formatCurrency(entry.value)}`}</title>
-                    </path>
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="transparent"
+                      stroke={entry.name === 'Income' ? '#10B981' : '#EF4444'}
+                      strokeWidth="12"
+                      strokeDasharray={strokeDasharray}
+                      strokeDashoffset={strokeDashoffset}
+                      strokeLinecap="round"
+                      className="transition-all duration-1000 cursor-pointer hover:stroke-[14px]"
+                    />
                   );
                 });
               })()}
-              <circle cx="110" cy="110" r="40" fill="white" className="shadow-inner" />
             </svg>
           </div>
           
@@ -242,9 +255,9 @@ const Analytics = ({ entries }) => {
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-6">
               {stats.pieData.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.name === 'Income' ? '#10B981' : '#EF4444' }} />
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase text-slate-700 leading-none mb-1 truncate max-w-[100px]">
+                    <span className="text-[10px] font-black uppercase text-slate-700 leading-none mb-1">
                       {entry.name}
                     </span>
                     <span className="text-[9px] font-bold text-slate-400 leading-none">
