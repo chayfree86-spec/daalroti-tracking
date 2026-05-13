@@ -1,12 +1,13 @@
 import React from 'react';
-import { LayoutDashboard, PlusCircle, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, BarChart3, Activity } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const BottomNav = ({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'add', label: 'Add Entry', icon: PlusCircle },
+    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+    { id: 'add', label: 'Add', icon: PlusCircle },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'analytics', label: 'Insights', icon: Activity },
   ];
 
   return (

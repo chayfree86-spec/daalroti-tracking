@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3 } from 'lucide-react';
 import { formatCurrency, formatDate, cn } from '../lib/utils';
 
-const History = ({ entries, onDelete }) => {
+const History = ({ entries, onDelete, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterMonth, setFilterMonth] = useState('');
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const [filterMonth, setFilterMonth] = useState(currentMonthStr);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'spend'
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
   // Sort and Calculate Running Balances before filtering to keep consistency
   const sortedEntries = [...entries].sort((a, b) => {
@@ -35,141 +38,262 @@ const History = ({ entries, onDelete }) => {
     const matchesSearch = entry.remark?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          entry.date.includes(searchTerm);
     const matchesMonth = filterMonth ? entry.date.startsWith(filterMonth) : true;
-    return matchesSearch && matchesMonth;
+    
+    const isIncome = (entry.cashDelta > 0 || entry.onlineDelta > 0);
+    const isSpend = (entry.cashDelta < 0 || entry.onlineDelta < 0);
+    
+    const matchesType = filterType === 'all' ? true : 
+                       filterType === 'income' ? isIncome : isSpend;
+
+    return matchesSearch && matchesMonth && matchesType;
   });
+
+  // Calculate Summary for the filtered period
+  const totalIncome = filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta > 0 ? entry.cashDelta : 0) + (entry.onlineDelta > 0 ? entry.onlineDelta : 0), 0);
+  const totalSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0) + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
+  const netBalance = totalIncome - totalSpend;
+
+  // Generate dynamic month list from entries
+  const availableMonths = [...new Set(entries.map(e => e.date.substring(0, 7)))].sort().reverse();
 
   return (
     <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-black text-slate-800 tracking-tight">Reports</h1>
-          <div className="bg-primary/10 text-primary px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border border-primary/20">
-            {filteredEntries.length} Entries
+      <header className="flex flex-col gap-2">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-4xl font-black text-slate-800 tracking-tight">Reports</h1>
+            <p className="text-slate-400 font-bold text-sm uppercase mt-1">Financial Analysis</p>
           </div>
-        </div>
-        
-        <div className="flex gap-4 items-center">
-           <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-black text-slate-400 uppercase">Records Found</p>
-              <p className="text-lg font-black text-slate-800">{filteredEntries.length}</p>
-           </div>
-           <div className="p-3 bg-white rounded-2xl shadow-premium border border-slate-100 text-primary">
-              <Filter size={20} />
-           </div>
+          <div className="bg-white px-5 py-3 rounded-2xl shadow-premium border border-slate-100 flex items-center gap-3">
+             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+             <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{filteredEntries.length} Transactions</span>
+          </div>
         </div>
       </header>
 
-      {/* Sticky Filters & Search */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sticky top-4 z-40">
-        <div className="md:col-span-2 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search by remark or date..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white shadow-premium border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 h-[60px]"
-          />
+      {/* Summary Stats Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-[2rem] shadow-premium border border-slate-50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-income/5 rounded-bl-[4rem]" />
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Income</p>
+          <p className="text-2xl font-black text-income tracking-tight">{formatCurrency(totalIncome)}</p>
+          <div className="mt-4 flex items-center gap-2 text-income/60">
+            <ArrowUpRight size={14} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Filtered Period</span>
+          </div>
         </div>
-        
-        <div className="flex gap-2 overflow-x-auto no-scrollbar h-[60px] items-center bg-white px-2 rounded-2xl shadow-premium border border-slate-100">
-          <button 
-            onClick={() => setFilterMonth('')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${!filterMonth ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-slate-50'}`}
-          >
-            All
-          </button>
-          {['2026-05', '2026-04', '2026-03'].map(month => (
-            <button 
-              key={month}
-              onClick={() => setFilterMonth(month)}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${filterMonth === month ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-slate-50'}`}
-            >
-              {new Date(month).toLocaleDateString('en-IN', { month: 'short' })}
-            </button>
-          ))}
+
+        <div className="bg-white p-6 rounded-[2rem] shadow-premium border border-slate-50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-spend/5 rounded-bl-[4rem]" />
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Spend</p>
+          <p className="text-2xl font-black text-spend tracking-tight">{formatCurrency(totalSpend)}</p>
+          <div className="mt-4 flex items-center gap-2 text-spend/60">
+            <ArrowDownRight size={14} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Filtered Period</span>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 p-6 rounded-[2rem] shadow-xl shadow-slate-900/10 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-bl-[4rem]" />
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Net Balance</p>
+          <p className="text-2xl font-black text-white tracking-tight">{formatCurrency(netBalance)}</p>
+          <div className="mt-4 flex items-center gap-2 text-white/40">
+            <Calendar size={14} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Results Found</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredEntries.length === 0 ? (
-          <div className="md:col-span-2 text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-            <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-               <Search size={32} />
-            </div>
-            <p className="text-slate-400 font-black uppercase text-sm tracking-widest">No matching records found</p>
-          </div>
-        ) : (
-          filteredEntries.map((entry) => {
-            const totalDelta = entry.cashDelta + entry.onlineDelta;
-            const isPositive = totalDelta >= 0;
-
-            return (
-              <div key={entry.id} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 relative overflow-hidden group hover:scale-[1.01] transition-all">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center",
-                        isPositive ? "bg-income/10 text-income" : "bg-spend/10 text-spend"
-                    )}>
-                      {isPositive ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="bg-slate-100 self-start px-3 py-1 rounded-lg mb-3">
-                        <span className="text-[10px] font-black text-slate-500 uppercase leading-none tracking-wider">{formatDate(entry.date)}</span>
-                      </div>
-                      <p className="text-base font-bold text-slate-400 leading-tight truncate max-w-[280px]">{entry.remark || 'Transaction'}</p>
-                    </div>
-                  </div>
+      {/* Sticky Filters Row */}
+      <div className="sticky top-4 z-40 flex flex-col md:flex-row gap-3 bg-white/80 backdrop-blur-xl p-3 rounded-[2rem] shadow-premium border border-white/50 items-stretch md:items-center">
+        
+        {/* 1. Months Dropdown (Custom UI) */}
+        <div className="relative group md:w-48 flex-shrink-0">
+          <button 
+            onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+            className={cn(
+              "w-full flex items-center justify-between px-6 h-[50px] rounded-2xl border transition-all",
+              filterMonth || isMonthDropdownOpen 
+                ? "bg-primary/10 border-primary/20 text-primary" 
+                : "bg-slate-50/50 border-slate-100 text-slate-600 hover:bg-white"
+            )}
+          >
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              {filterMonth ? new Date(filterMonth + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }) : 'All Time'}
+            </span>
+            <div className={cn(
+              "w-2 h-2 rounded-full transition-all",
+              filterMonth ? "bg-primary shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-slate-300"
+            )} />
+          </button>
+          
+          {isMonthDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setIsMonthDropdownOpen(false)} />
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-200">
+                <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
                   <button 
-                    onClick={() => onDelete(entry.id)}
-                    className="p-3 text-slate-300 hover:text-spend transition-colors bg-slate-50 rounded-2xl"
+                    onClick={() => { setFilterMonth(''); setIsMonthDropdownOpen(false); }}
+                    className={cn(
+                      "w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                      !filterMonth ? "bg-primary text-white shadow-lg" : "text-slate-400 hover:bg-slate-50"
+                    )}
                   >
-                    <Trash2 size={18} />
+                    All Time
                   </button>
-                </div>
-
-                {/* Transaction Amount Badges (Very prominent now) */}
-                <div className="flex flex-wrap gap-4 mt-2 mb-8">
-                    {entry.cashDelta !== 0 && (
-                        <div className={cn(
-                            "text-xl font-black tracking-tight",
-                            entry.cashDelta > 0 ? "text-income" : "text-spend"
-                        )}>
-                            {entry.cashDelta > 0 ? '+' : ''}{formatCurrency(entry.cashDelta)}
-                            <span className="text-[10px] uppercase ml-1 opacity-50 font-black">Cash</span>
-                        </div>
-                    )}
-                    {entry.onlineDelta !== 0 && (
-                        <div className={cn(
-                            "text-xl font-black tracking-tight",
-                            entry.onlineDelta > 0 ? "text-income" : "text-spend"
-                        )}>
-                            {entry.onlineDelta > 0 ? '+' : ''}{formatCurrency(entry.onlineDelta)}
-                            <span className="text-[10px] uppercase ml-1 opacity-50 font-black">Online</span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Closing Balances Grid */}
-                <div className="grid grid-cols-3 gap-3 pt-6 border-t border-slate-50">
-                  <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
-                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Closing Cash</p>
-                    <p className="text-sm font-black text-slate-600 leading-none">{formatCurrency(entry.runningCash)}</p>
-                  </div>
-                  <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
-                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Closing Online</p>
-                    <p className="text-sm font-black text-slate-600 leading-none">{formatCurrency(entry.runningOnline)}</p>
-                  </div>
-                  <div className="bg-slate-900 p-4 rounded-2xl shadow-lg shadow-slate-900/10">
-                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Final Total</p>
-                    <p className="text-sm font-black text-white leading-none">{formatCurrency(entry.runningTotal)}</p>
-                  </div>
+                  {availableMonths.map(month => (
+                    <button 
+                      key={month}
+                      onClick={() => { setFilterMonth(month); setIsMonthDropdownOpen(false); }}
+                      className={cn(
+                        "w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                        filterMonth === month ? "bg-primary text-white shadow-lg" : "text-slate-400 hover:bg-slate-50"
+                      )}
+                    >
+                      {new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}
+                    </button>
+                  ))}
                 </div>
               </div>
-            );
-          })
-        )}
+            </>
+          )}
+        </div>
+
+        {/* 2. Type Filter */}
+        <div className="flex p-1 bg-slate-50/50 rounded-2xl border border-slate-100 h-[50px] md:w-56 flex-shrink-0">
+           {['all', 'income', 'spend'].map((type) => (
+             <button
+               key={type}
+               onClick={() => setFilterType(type)}
+               className={cn(
+                 "flex-1 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                 filterType === type 
+                   ? (type === 'income' ? "bg-income text-white shadow-lg shadow-income/20" : 
+                      type === 'spend' ? "bg-spend text-white shadow-lg shadow-spend/20" : 
+                      "bg-slate-900 text-white shadow-lg shadow-slate-900/20")
+                   : "text-slate-400 hover:text-slate-600"
+               )}
+             >
+               {type}
+             </button>
+           ))}
+        </div>
+
+        {/* 3. Search Bar */}
+        <div className="relative md:w-64 md:ml-auto">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-slate-50/50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 h-[50px] text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {/* Table Header - Visible on Desktop */}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50 rounded-2xl border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+          <div className="col-span-2">Date</div>
+          <div className="col-span-3">Description</div>
+          <div className="col-span-2 text-right">Cash</div>
+          <div className="col-span-2 text-right">Online</div>
+          <div className="col-span-2 text-right pr-8">Closing</div>
+          <div className="col-span-1"></div>
+        </div>
+
+        <div className="space-y-3">
+          {filteredEntries.length === 0 ? (
+            <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+              <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                 <Search size={32} />
+              </div>
+              <p className="text-slate-400 font-black uppercase text-sm tracking-widest">No matching records found</p>
+            </div>
+          ) : (
+            filteredEntries.map((entry) => {
+              const totalDelta = entry.cashDelta + entry.onlineDelta;
+              const isPositive = totalDelta >= 0;
+
+              return (
+                <div key={entry.id} className="bg-white px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border border-slate-50 group hover:border-primary/20 transition-all">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    
+                    {/* Date & Icon */}
+                    <div className="col-span-1 md:col-span-2 flex items-center gap-3">
+                      <div className={cn(
+                          "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
+                          isPositive ? "bg-income/5 text-income/60" : "bg-spend/10 text-spend"
+                      )}>
+                        {isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 whitespace-nowrap">{formatDate(entry.date)}</span>
+                    </div>
+
+                    {/* Description */}
+                    <div className="col-span-1 md:col-span-3">
+                      <p className="text-sm font-bold text-slate-600 truncate">
+                        {entry.remark || (isPositive ? 'Income' : 'Spend')}
+                      </p>
+                    </div>
+
+                    {/* Cash Amount */}
+                    <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+                        <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
+                        <p className={cn(
+                          "text-sm font-black tracking-tight",
+                          entry.cashDelta > 0 ? "text-income/70" : entry.cashDelta < 0 ? "text-spend" : "text-slate-300"
+                        )}>
+                          {entry.cashDelta !== 0 ? (entry.cashDelta > 0 ? '+' : '') + formatCurrency(entry.cashDelta) : '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Online Amount */}
+                    <div className="col-span-1 md:col-span-2 md:text-right">
+                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+                        <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Online</span>
+                        <p className={cn(
+                          "text-sm font-black tracking-tight",
+                          entry.onlineDelta > 0 ? "text-income/70" : entry.onlineDelta < 0 ? "text-spend" : "text-slate-300"
+                        )}>
+                          {entry.onlineDelta !== 0 ? (entry.onlineDelta > 0 ? '+' : '') + formatCurrency(entry.onlineDelta) : '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Closing Balance */}
+                    <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
+                        <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Closing</span>
+                        <p className="text-sm font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
+                      </div>
+                    </div>
+
+                    {/* Action */}
+                    <div className="col-span-1 md:col-span-1 flex justify-end gap-2">
+                      <button 
+                        onClick={() => onEdit(entry)}
+                        className="p-2 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-xl"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => onDelete(entry.id)}
+                        className="p-2 text-spend/30 hover:text-spend transition-colors hover:bg-spend/5 rounded-xl"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

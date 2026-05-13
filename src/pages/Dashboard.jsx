@@ -166,62 +166,57 @@ const Dashboard = ({ entries, setActiveTab }) => {
                 const isPositive = totalDelta >= 0;
 
                 return (
-                  <div key={entry.id} className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 transition-all hover:scale-[1.01]">
+                  <div 
+                    key={entry.id} 
+                    onClick={() => setActiveTab('reports')}
+                    className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 transition-all hover:scale-[1.01] cursor-pointer active:scale-95 group"
+                  >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className={cn(
-                                "w-12 h-12 rounded-2xl flex items-center justify-center",
-                                isPositive ? "bg-income/10 text-income" : "bg-spend/10 text-spend"
+                                  "rounded-2xl flex items-center justify-center transition-all group-hover:scale-110",
+                                  isPositive 
+                                  ? "w-10 h-10 bg-income/5 text-income/60 group-hover:bg-income group-hover:text-white" 
+                                  : "w-12 h-12 bg-spend/10 text-spend group-hover:bg-spend group-hover:text-white"
                             )}>
-                                {isPositive ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
+                                {isPositive ? <ArrowUpRight size={20} /> : <ArrowDownRight size={24} />}
                             </div>
                             <div className="overflow-hidden flex flex-col">
                                 <div className="bg-slate-100 self-start px-3 py-1 rounded-lg mb-2">
                                   <span className="text-[10px] font-black text-slate-500 uppercase leading-none tracking-wider">{formatDate(entry.date)}</span>
                                 </div>
-                                <p className="text-sm font-bold text-slate-400 leading-tight truncate">{entry.remark || 'Transaction'}</p>
+                                <p className="text-sm font-bold text-slate-400 leading-tight truncate">
+                                  {entry.remark || (isPositive ? 'Income' : 'Spend')}
+                                </p>
                                 
                                 {/* Delta Details (Prominent Amount) */}
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {entry.cashDelta !== 0 && (
                                         <span className={cn(
-                                          "text-xl font-black tracking-tight", 
-                                          entry.cashDelta > 0 ? "text-income" : "text-spend"
+                                          "tracking-tight", 
+                                          entry.cashDelta > 0 ? "text-lg font-bold text-income/70" : "text-xl font-black text-spend"
                                         )}>
                                             {entry.cashDelta > 0 ? '+' : ''}{formatCurrency(entry.cashDelta)}
-                                            <span className="text-[10px] uppercase ml-1 opacity-50 font-black">Cash</span>
+                                            <span className="text-[10px] uppercase ml-1 opacity-50 font-bold">Cash</span>
                                         </span>
                                     )}
                                     {entry.onlineDelta !== 0 && (
                                         <span className={cn(
-                                          "text-xl font-black tracking-tight", 
-                                          entry.onlineDelta > 0 ? "text-income" : "text-spend"
+                                          "tracking-tight", 
+                                          entry.onlineDelta > 0 ? "text-lg font-bold text-income/70" : "text-xl font-black text-spend"
                                         )}>
                                             {entry.onlineDelta > 0 ? '+' : ''}{formatCurrency(entry.onlineDelta)}
-                                            <span className="text-[10px] uppercase ml-1 opacity-50 font-black">Online</span>
+                                            <span className="text-[10px] uppercase ml-1 opacity-50 font-bold">Online</span>
                                         </span>
                                     )}
                                 </div>
                             </div>
                         </div>
                         
-                        <div className="flex gap-6 items-center justify-between md:justify-end bg-slate-50/50 p-4 rounded-3xl md:bg-transparent md:p-0">
+                        <div className="flex gap-6 items-center justify-end">
                             <div className="text-right">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase leading-none mb-1">Closing Bal.</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Closing Bal.</p>
                                 <p className="text-xl font-black text-slate-800 leading-none">{formatCurrency(entry.runningTotal)}</p>
-                            </div>
-                            
-                            <div className="w-px h-8 bg-slate-200 hidden md:block" />
-                            
-                            <div className="flex flex-col items-end gap-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[8px] font-black text-slate-300 uppercase">C:</span>
-                                    <span className="text-xs font-bold text-slate-500">{formatCurrency(entry.runningCash)}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[8px] font-black text-slate-300 uppercase">O:</span>
-                                    <span className="text-xs font-bold text-slate-500">{formatCurrency(entry.runningOnline)}</span>
-                                </div>
                             </div>
                         </div>
                     </div>

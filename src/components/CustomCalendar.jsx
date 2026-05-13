@@ -62,29 +62,24 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-6 animate-in fade-in duration-300">
       <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
-          <div>
+          <div className="flex flex-col">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Select Date</p>
-            <h3 className="text-xl font-black">{months[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+            <div className="flex items-center gap-4 mt-1">
+              <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <ChevronLeft size={20} className="text-white" />
+              </button>
+              <h3 className="text-xl font-black min-w-[140px] text-center">{months[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+              <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <ChevronRight size={20} className="text-white" />
+              </button>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
+          <button onClick={onClose} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors self-start">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <button onClick={handlePrevMonth} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-              <ChevronLeft size={20} className="text-slate-600" />
-            </button>
-            <div className="flex gap-2">
-               <span className="font-black text-slate-800">{months[currentMonth.getMonth()].slice(0,3)}</span>
-               <span className="font-black text-slate-400">{currentMonth.getFullYear()}</span>
-            </div>
-            <button onClick={handleNextMonth} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-              <ChevronRight size={20} className="text-slate-600" />
-            </button>
-          </div>
-
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
             {['S','M','T','W','T','F','S'].map((d, i) => (
               <span key={i} className="text-[10px] font-black text-slate-300 uppercase">{d}</span>

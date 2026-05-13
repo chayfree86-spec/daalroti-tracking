@@ -1,18 +1,39 @@
-import React, { useState, useRef } from 'react';
-import { Save, Wallet, Smartphone, MessageSquare, Calendar } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn, formatDate } from '../lib/utils';
 import CustomCalendar from '../components/CustomCalendar';
 import CustomAlert from '../components/CustomAlert';
 
-const AddEntry = ({ onSave }) => {
+const AddEntry = ({ onSave, editData, onCancel }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     cashIncome: '',
     onlineIncome: '',
     cashSpend: '',
     onlineSpend: '',
-    remark: '',
+    incomeRemark: 'Income',
+    spendRemark: 'Spend',
   });
+
+  useEffect(() => {
+    if (editData) {
+      setFormData({
+        date: editData.date,
+        cashIncome: editData.cashIncome || '',
+        onlineIncome: editData.onlineIncome || '',
+        cashSpend: editData.cashSpend || '',
+        onlineSpend: editData.onlineSpend || '',
+        incomeRemark: editData.incomeRemark || editData.remark || 'Income',
+        spendRemark: editData.spendRemark || editData.remark || 'Spend',
+      });
+    }
+  }, [editData]);
+
+  const changeDate = (days) => {
+    const currentDate = new Date(formData.date);
+    currentDate.setDate(currentDate.getDate() + days);
+    setFormData(prev => ({ ...prev, date: currentDate.toISOString().split('T')[0] }));
+  };
 
   const [showCalendar, setShowCalendar] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
@@ -20,10 +41,13 @@ const AddEntry = ({ onSave }) => {
   // Refs for focus management (User Rule Requirement)
   const cashIncomeRef = useRef(null);
   const onlineIncomeRef = useRef(null);
+  const incomeRemarkRef = useRef(null);
+  const incomeSubmitRef = useRef(null);
+  
   const cashSpendRef = useRef(null);
   const onlineSpendRef = useRef(null);
-  const remarkRef = useRef(null);
-  const submitRef = useRef(null);
+  const spendRemarkRef = useRef(null);
+  const spendSubmitRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,62 +61,143 @@ const AddEntry = ({ onSave }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSaveIncome = (e) => {
     e.preventDefault();
-    if (!formData.cashIncome && !formData.onlineIncome && !formData.cashSpend && !formData.onlineSpend) {
+    if (!formData.cashIncome && !formData.onlineIncome) {
         setAlert({
             show: true,
             type: 'error',
-            title: 'Empty Entry',
-            message: 'Please enter at least one income or spend amount.'
+            title: 'Empty Income',
+            message: 'Please enter at least one income amount.'
         });
         return;
     }
     
     const entry = {
-      ...formData,
+      date: formData.date,
+      cashIncome: formData.cashIncome,
+      onlineIncome: formData.onlineIncome,
+      cashSpend: '',
+      onlineSpend: '',
+      remark: formData.incomeRemark.trim() || 'Income',
       id: Date.now(),
       timestamp: new Date().toISOString(),
     };
     onSave(entry);
     
+    // Clear income fields after save, reset to default remark
+    setFormData(prev => ({ 
+      ...prev, 
+      cashIncome: '', 
+      onlineIncome: '', 
+      incomeRemark: 'Income' 
+    }));
+    
     setAlert({
         show: true,
         type: 'success',
-        title: 'Saved Successfully!',
-        message: `Entry for ${formatDate(formData.date)} has been recorded.`
+        title: 'Income Saved!',
+        message: `Income entry for ${formatDate(formData.date)} recorded.`
+    });
+  };
+
+  const handleSaveSpend = (e) => {
+    e.preventDefault();
+    if (!formData.cashSpend && !formData.onlineSpend) {
+        setAlert({
+            show: true,
+            type: 'error',
+            title: 'Empty Spend',
+            message: 'Please enter at least one spend amount.'
+        });
+        return;
+    }
+    
+    const entry = {
+      date: formData.date,
+      cashIncome: '',
+      onlineIncome: '',
+      cashSpend: formData.cashSpend,
+      onlineSpend: formData.onlineSpend,
+      remark: formData.spendRemark.trim() || 'Spend',
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+    };
+    onSave(entry);
+    
+    // Clear spend fields after save, reset to default remark
+    setFormData(prev => ({ 
+      ...prev, 
+      cashSpend: '', 
+      onlineSpend: '', 
+      spendRemark: 'Spend' 
+    }));
+
+    setAlert({
+        show: true,
+        type: 'success',
+        title: 'Spend Saved!',
+        title: editData ? 'Spend Updated!' : 'Spend Saved!',
+        message: `Spend entry for ${formatDate(formData.date)} recorded.`
     });
   };
 
   return (
     <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
-      <header className="text-center md:text-left flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Add New <span className="text-primary">Entry</span></h1>
-          <p className="text-slate-400 font-bold text-sm uppercase mt-1">Daily Finance Tracking</p>
+      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+             <h1 className="text-4xl font-black text-slate-800 tracking-tight">{editData ? 'Edit Entry' : 'Add Entry'}</h1>
+             {editData && (
+                <button 
+                  onClick={onCancel}
+                  className="bg-slate-100 text-slate-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+             )}
+          </div>
+          <p className="text-slate-400 font-bold text-sm uppercase">Daily Revenue Tracking</p>
         </div>
 
         {/* Custom Date Picker at Top Right for Web, Center for Mobile */}
-        <div className="space-y-2 min-w-[200px]">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 md:justify-end">
-            <Calendar size={12} className="text-primary" />
+        <div className="space-y-2 min-w-[200px] flex flex-col items-end">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 justify-end">
             Entry Date
+            <Calendar size={12} className="text-primary" />
           </label>
-          <button
-            type="button"
-            onClick={() => setShowCalendar(true)}
-            className="w-full md:w-auto px-6 h-[50px] rounded-2xl bg-white border-2 border-slate-100 flex justify-between items-center gap-4 hover:border-primary/30 transition-all font-bold text-slate-700 shadow-premium"
-          >
-            <span>{formatDate(formData.date)}</span>
-            <Calendar size={18} className="text-primary/40" />
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => changeDate(-1)}
+              className="w-10 h-[50px] rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-premium"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setShowCalendar(true)}
+              className="px-6 h-[50px] rounded-2xl bg-white border-2 border-slate-100 flex justify-end items-center gap-4 hover:border-primary/30 transition-all font-bold text-slate-700 shadow-premium min-w-[160px]"
+            >
+              <span>{formatDate(formData.date)}</span>
+              <Calendar size={18} className="text-primary/40" />
+            </button>
+
+            <button 
+              onClick={() => changeDate(1)}
+              className="w-10 h-[50px] rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-premium"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Income Section */}
-          <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+        {/* Income Section */}
+        <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+          <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-income/10 text-income flex items-center justify-center">
                 <Save size={24} />
@@ -103,8 +208,8 @@ const AddEntry = ({ onSave }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Wallet size={12} className="text-income" />
                   Cash Income
+                  <Wallet size={12} className="text-income" />
                 </label>
                 <input
                   ref={cashIncomeRef}
@@ -115,13 +220,13 @@ const AddEntry = ({ onSave }) => {
                   onChange={handleChange}
                   onKeyDown={(e) => handleKeyDown(e, onlineIncomeRef)}
                   placeholder="0"
-                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Smartphone size={12} className="text-income" />
                   Online Income
+                  <Smartphone size={12} className="text-income" />
                 </label>
                 <input
                   ref={onlineIncomeRef}
@@ -129,16 +234,44 @@ const AddEntry = ({ onSave }) => {
                   name="onlineIncome"
                   value={formData.onlineIncome}
                   onChange={handleChange}
-                  onKeyDown={(e) => handleKeyDown(e, cashSpendRef)}
+                  onKeyDown={(e) => handleKeyDown(e, incomeRemarkRef)}
                   placeholder="0"
-                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
               </div>
             </div>
+
+            <div className="space-y-2 pt-2 border-t border-slate-50">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                Remark / Reason
+                <MessageSquare size={12} className="text-primary" />
+              </label>
+              <input
+                ref={incomeRemarkRef}
+                type="text"
+                name="incomeRemark"
+                value={formData.incomeRemark}
+                onChange={handleChange}
+                onKeyDown={(e) => handleKeyDown(e, incomeSubmitRef)}
+                placeholder="E.g. Salary, Gift, Bonus..."
+                className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+              />
+            </div>
           </div>
 
-          {/* Spend Section (Remark moved here) */}
-          <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 space-y-8">
+          <button
+            ref={incomeSubmitRef}
+            onClick={handleSaveIncome}
+            className="w-full h-16 bg-income text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-income/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+          >
+            <Save size={18} />
+            {editData ? 'Update Income' : 'Save Income'}
+          </button>
+        </div>
+
+        {/* Spend Section */}
+        <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+          <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-spend/10 text-spend flex items-center justify-center">
                 <Save size={24} className="rotate-180" />
@@ -150,8 +283,8 @@ const AddEntry = ({ onSave }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Wallet size={12} className="text-spend" />
                     Cash Spend
+                    <Wallet size={12} className="text-spend" />
                   </label>
                   <input
                     ref={cashSpendRef}
@@ -161,13 +294,13 @@ const AddEntry = ({ onSave }) => {
                     onChange={handleChange}
                     onKeyDown={(e) => handleKeyDown(e, onlineSpendRef)}
                     placeholder="0"
-                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Smartphone size={12} className="text-spend" />
                     Online Spend
+                    <Smartphone size={12} className="text-spend" />
                   </label>
                   <input
                     ref={onlineSpendRef}
@@ -175,44 +308,42 @@ const AddEntry = ({ onSave }) => {
                     name="onlineSpend"
                     value={formData.onlineSpend}
                     onChange={handleChange}
-                    onKeyDown={(e) => handleKeyDown(e, remarkRef)}
+                    onKeyDown={(e) => handleKeyDown(e, spendRemarkRef)}
                     placeholder="0"
-                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
                 </div>
               </div>
 
               <div className="space-y-2 pt-2 border-t border-slate-50">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  Remark / Reason
                   <MessageSquare size={12} className="text-primary" />
-                  Remark / Spend Reason
                 </label>
                 <input
-                  ref={remarkRef}
+                  ref={spendRemarkRef}
                   type="text"
-                  name="remark"
-                  value={formData.remark}
+                  name="spendRemark"
+                  value={formData.spendRemark}
                   onChange={handleChange}
-                  onKeyDown={(e) => handleKeyDown(e, submitRef)}
-                  placeholder="E.g. Dinner, Fuel, Groceries..."
+                  onKeyDown={(e) => handleKeyDown(e, spendSubmitRef)}
+                  placeholder="E.g. Dinner, Salary, Rent..."
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-center md:justify-end pt-4">
           <button
-            ref={submitRef}
-            type="submit"
-            className="w-full md:w-auto min-w-[250px] h-[70px] rounded-3xl bg-slate-900 text-white font-black text-lg shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:bg-slate-800"
+            ref={spendSubmitRef}
+            onClick={handleSaveSpend}
+            className="mt-8 w-full h-[70px] rounded-3xl bg-spend text-white font-black text-lg shadow-xl shadow-spend/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:brightness-110"
           >
-            <Save size={24} />
-            Save Entry
+            <Save size={24} className="rotate-180" />
+            Save Spend
           </button>
         </div>
-      </form>
+      </div>
 
       {/* Custom Components */}
       {showCalendar && (
