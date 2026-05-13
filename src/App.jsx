@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Dashboard from './pages/Dashboard';
 import AddEntry from './pages/AddEntry';
 import History from './pages/History';
@@ -6,6 +6,8 @@ import Analytics from './pages/Analytics';
 import BottomNav from './components/BottomNav';
 import CustomAlert from './components/CustomAlert';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getSyncUrl, setSyncUrl, fetchFromSheet, syncToSheet } from './lib/googleSheets';
+import { Settings, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -15,6 +17,10 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
+  const [showSettings, setShowSettings] = useState(false);
+  const [syncUrlInput, setSyncUrlInput] = useState(getSyncUrl() || '');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState(localStorage.getItem('dr_last_sync') || 'Never');
 
   const handleTabChange = (tabId) => {
     if (tabId !== 'add') {
@@ -23,9 +29,45 @@ function App() {
     setActiveTab(tabId);
   };
 
+  // Sync Logic
+  const handleSync = useCallback(async (dataToSync = entries) => {
+    if (!getSyncUrl()) return;
+    setIsSyncing(true);
+    try {
+      await syncToSheet(dataToSync);
+      const now = new Date().toLocaleTimeString();
+      setLastSynced(now);
+      localStorage.setItem('dr_last_sync', now);
+    } catch (error) {
+      console.error('Sync failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [entries]);
+
+  const handleFetch = async () => {
+    if (!getSyncUrl()) return;
+    setIsSyncing(true);
+    try {
+      const data = await fetchFromSheet();
+      if (data && Array.isArray(data)) {
+        setEntries(data);
+      }
+    } catch (error) {
+      console.error('Fetch failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem('dr_entries', JSON.stringify(entries));
-  }, [entries]);
+    // Auto-sync after 2 seconds of inactivity
+    const timeout = setTimeout(() => {
+      handleSync(entries);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [entries, handleSync]);
 
   const addEntry = (entry) => {
     if (editingEntry) {
@@ -34,7 +76,7 @@ function App() {
     } else {
       setEntries([entry, ...entries]);
     }
-    setActiveTab('dashboard');
+    // Removed automatic redirect to keep user on the same page for continuous entry
   };
 
   const deleteEntry = (id) => {
@@ -51,6 +93,12 @@ function App() {
     setActiveTab('add');
   };
 
+  const saveSettings = () => {
+    setSyncUrl(syncUrlInput);
+    setShowSettings(false);
+    handleFetch(); // Initial fetch
+  };
+
   const renderScreen = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -58,7 +106,7 @@ function App() {
       case 'analytics':
         return <Analytics entries={entries} />;
       case 'add':
-        return <AddEntry onSave={addEntry} editData={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('reports'); }} />;
+        return <AddEntry entries={entries} onSave={addEntry} editData={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('reports'); }} />;
       case 'reports':
         return <History entries={entries} onDelete={deleteEntry} onEdit={handleEdit} />;
       default:
@@ -68,6 +116,28 @@ function App() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
+      {/* Top Header Controls */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+         <div className={`px-4 py-2 rounded-2xl border flex items-center gap-2 transition-all backdrop-blur-md ${isSyncing ? 'bg-primary/20 border-primary/30' : 'bg-white/80 border-slate-100'}`}>
+            {isSyncing ? (
+              <RefreshCw size={14} className="text-primary animate-spin" />
+            ) : getSyncUrl() ? (
+              <Cloud size={14} className="text-income" />
+            ) : (
+              <CloudOff size={14} className="text-slate-300" />
+            )}
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              {isSyncing ? 'Syncing...' : `Last: ${lastSynced}`}
+            </span>
+         </div>
+         <button 
+           onClick={() => setShowSettings(true)}
+           className="p-3 bg-white/80 backdrop-blur-md border border-slate-100 rounded-2xl text-slate-400 hover:text-primary transition-all shadow-sm"
+         >
+           <Settings size={18} />
+         </button>
+      </div>
+
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -81,6 +151,66 @@ function App() {
       </AnimatePresence>
 
       <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSettings(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 relative z-10 space-y-8"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Settings size={32} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sync Settings</h2>
+                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Connect Google Sheets</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4 mb-2 block">Apps Script URL</label>
+                  <input 
+                    type="text" 
+                    value={syncUrlInput}
+                    onChange={(e) => setSyncUrlInput(e.target.value)}
+                    placeholder="https://script.google.com/macros/s/..."
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-700 text-sm"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 leading-relaxed text-center px-4">
+                  Paste your Google Apps Script Web App URL to sync data across devices.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => setShowSettings(false)}
+                  className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 text-slate-400 font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={saveSettings}
+                  className="flex-1 px-6 py-4 rounded-2xl bg-primary text-slate-900 font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Save & Sync
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <CustomAlert 
         show={deleteConfirm.show}

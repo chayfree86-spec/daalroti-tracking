@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3 } from 'lucide-react';
-import { formatCurrency, formatDate, cn } from '../lib/utils';
+import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet } from 'lucide-react';
+import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
 
 const History = ({ entries, onDelete, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,12 +49,62 @@ const History = ({ entries, onDelete, onEdit }) => {
   });
 
   // Calculate Summary for the filtered period
-  const totalIncome = filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta > 0 ? entry.cashDelta : 0) + (entry.onlineDelta > 0 ? entry.onlineDelta : 0), 0);
-  const totalSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0) + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
-  const netBalance = totalIncome - totalSpend;
+  const periodCashSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0), 0));
+  const periodOnlineSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
+  
+  // Latest running balances for the filtered period
+  const latestEntry = filteredEntries[0]; 
+  const currentCashBal = latestEntry ? latestEntry.runningCash : 0;
+  const currentOnlineBal = latestEntry ? latestEntry.runningOnline : 0;
+  const netBalance = currentCashBal + currentOnlineBal;
 
   // Generate dynamic month list from entries
   const availableMonths = [...new Set(entries.map(e => e.date.substring(0, 7)))].sort().reverse();
+
+  const SummaryCard = ({ title, amount, icon: Icon, gradient, subtitle, light, hideWords, footer }) => (
+    <div className={cn(
+      "p-5 rounded-[2.5rem] shadow-xl relative overflow-hidden group transition-all hover:scale-[1.02] h-full",
+      gradient,
+      light ? "text-slate-800 border border-slate-100" : "text-white"
+    )}>
+      <div className={cn(
+        "absolute -right-4 -top-4 w-20 h-20 rounded-full group-hover:scale-110 transition-transform duration-500",
+        light ? "bg-slate-50" : "bg-white/10"
+      )} />
+      <div className="flex justify-between items-start mb-3">
+        <div className={cn(
+          "p-2 rounded-xl backdrop-blur-sm",
+          light ? "bg-slate-50" : "bg-white/20"
+        )}>
+          <Icon size={18} />
+        </div>
+        <span className={cn(
+          "text-[8px] font-black uppercase tracking-widest opacity-60",
+          light ? "text-slate-400" : "text-white/60"
+        )}>{subtitle}</span>
+      </div>
+      <h3 className={cn(
+        "text-[10px] font-black uppercase tracking-wider mb-1 opacity-80",
+        light ? "text-slate-500" : "text-white/80"
+      )}>{title}</h3>
+      <div className="text-xl font-black tracking-tight">{formatCurrency(amount)}</div>
+      
+      {!hideWords && (
+        <div className={cn(
+          "text-[7px] font-black uppercase tracking-[0.15em] mt-1 truncate",
+          light ? "text-slate-300" : "opacity-30"
+        )}>
+          {numberToWords(amount)}
+        </div>
+      )}
+
+      {footer && (
+        <div className="mt-2 flex justify-between items-center text-[8px] font-black uppercase tracking-widest opacity-70">
+          {footer}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
@@ -71,36 +121,49 @@ const History = ({ entries, onDelete, onEdit }) => {
         </div>
       </header>
 
-      {/* Summary Stats Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[2rem] shadow-premium border border-slate-50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-income/5 rounded-bl-[4rem]" />
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Income</p>
-          <p className="text-2xl font-black text-income tracking-tight">{formatCurrency(totalIncome)}</p>
-          <div className="mt-4 flex items-center gap-2 text-income/60">
-            <ArrowUpRight size={14} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Filtered Period</span>
-          </div>
+      {/* Summary Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Main Balance Card */}
+        <div className="md:col-span-4">
+          <SummaryCard 
+            title="Net Balance" 
+            amount={netBalance} 
+            icon={Landmark} 
+            gradient="bg-gradient-to-br from-slate-800 to-slate-950"
+            subtitle="Total Savings"
+          />
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] shadow-premium border border-slate-50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-spend/5 rounded-bl-[4rem]" />
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Spend</p>
-          <p className="text-2xl font-black text-spend tracking-tight">{formatCurrency(totalSpend)}</p>
-          <div className="mt-4 flex items-center gap-2 text-spend/60">
-            <ArrowDownRight size={14} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Filtered Period</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-900 p-6 rounded-[2rem] shadow-xl shadow-slate-900/10 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-bl-[4rem]" />
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Net Balance</p>
-          <p className="text-2xl font-black text-white tracking-tight">{formatCurrency(netBalance)}</p>
-          <div className="mt-4 flex items-center gap-2 text-white/40">
-            <Calendar size={14} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Results Found</span>
-          </div>
+        {/* Breakdown Grid */}
+        <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <SummaryCard 
+            title="Cash Bal" 
+            amount={currentCashBal} 
+            icon={Wallet} 
+            gradient="bg-gradient-to-br from-primary to-amber-600"
+            subtitle="In Hand"
+          />
+          <SummaryCard 
+            title="Online Bal" 
+            amount={currentOnlineBal} 
+            icon={Smartphone} 
+            gradient="bg-gradient-to-br from-income to-emerald-600"
+            subtitle="Bank"
+          />
+          <SummaryCard 
+            title="Cash Spend" 
+            amount={periodCashSpend} 
+            icon={ArrowDownRight} 
+            gradient="bg-gradient-to-br from-spend/80 to-spend"
+            subtitle="Spent"
+          />
+          <SummaryCard 
+            title="Online Spend" 
+            amount={periodOnlineSpend} 
+            icon={Smartphone} 
+            gradient="bg-gradient-to-br from-spend/80 to-spend"
+            subtitle="Spent"
+          />
         </div>
       </div>
 

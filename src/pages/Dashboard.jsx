@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
-import { formatCurrency, formatDate, cn } from '../lib/utils';
+import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
 
 const Dashboard = ({ entries, setActiveTab }) => {
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   // Sort entries by date and then by ID (timestamp) to ensure consistent running balance
@@ -11,18 +12,7 @@ const Dashboard = ({ entries, setActiveTab }) => {
     return a.id - b.id;
   });
 
-  // Extract unique years from entries
-  const availableYears = [...new Set(entries.map(e => new Date(e.date).getFullYear()))];
-  const currentYear = new Date().getFullYear();
-  if (!availableYears.includes(currentYear)) availableYears.push(currentYear);
-  availableYears.sort((a, b) => b - a);
-
-  // Filter entries by selected year
-  const filteredYearEntries = sortedEntries.filter(entry => 
-    new Date(entry.date).getFullYear() === selectedYear
-  );
-
-  // Calculate Running Balances for ALL entries (to get accurate closing balance)
+  // Calculate Running Balances for ALL entries
   let runningCash = 0;
   let runningOnline = 0;
   const entriesWithRunningBalance = sortedEntries.map(entry => {
@@ -42,103 +32,169 @@ const Dashboard = ({ entries, setActiveTab }) => {
     };
   });
 
-  // Get the summary for the selected year (as of the end of that year)
-  // Find the last entry in the selected year
-  const lastEntryOfYear = [...entriesWithRunningBalance]
-    .filter(e => new Date(e.date).getFullYear() === selectedYear)
+  // Calculate Opening Balance (Everything before the selected month/year)
+  const firstDayOfMonth = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+  const lastEntryBeforeMonth = [...entriesWithRunningBalance]
+    .filter(e => e.date < firstDayOfMonth)
     .sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
 
-  // If no entries for that year, we need to find the state at the end of the previous year
-  let displayCashBalance = 0;
-  let displayOnlineBalance = 0;
+  const openingCash = lastEntryBeforeMonth ? lastEntryBeforeMonth.runningCash : 0;
+  const openingOnline = lastEntryBeforeMonth ? lastEntryBeforeMonth.runningOnline : 0;
+  const openingTotal = openingCash + openingOnline;
 
-  if (lastEntryOfYear) {
-    displayCashBalance = lastEntryOfYear.runningCash;
-    displayOnlineBalance = lastEntryOfYear.runningOnline;
-  } else {
-    // If selecting a future year or a year with no data, show the latest overall balance if the year is >= current
-    // or show 0 if it's a past year with no data.
-    const latestOverall = entriesWithRunningBalance[entriesWithRunningBalance.length - 1];
-    if (latestOverall && selectedYear >= new Date(latestOverall.date).getFullYear()) {
-      displayCashBalance = latestOverall.runningCash;
-      displayOnlineBalance = latestOverall.runningOnline;
-    }
-  }
+  // Filter entries for the selected month and year
+  const monthFilter = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+  const dashboardTransactions = [...entriesWithRunningBalance]
+    .filter(e => e.date.startsWith(monthFilter))
+    .reverse();
 
+  // Current Month Summary (In-Month totals)
+  const currentMonthEntries = entriesWithRunningBalance.filter(e => e.date.startsWith(monthFilter));
+  const monthIncome = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0) + Number(e.onlineIncome || 0), 0);
+  const monthSpend = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
+  
+  const monthCashIncome = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0), 0);
+  const monthOnlineIncome = currentMonthEntries.reduce((acc, e) => acc + Number(e.onlineIncome || 0), 0);
+  const monthCashSpend = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0), 0);
+  const monthOnlineSpend = currentMonthEntries.reduce((acc, e) => acc + Number(e.onlineSpend || 0), 0);
+
+  // Closing Balance (Last entry of current month OR opening if no entries)
+  const lastEntryOfMonth = [...entriesWithRunningBalance]
+    .filter(e => e.date.startsWith(monthFilter))
+    .sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
+
+  const displayCashBalance = lastEntryOfMonth ? lastEntryOfMonth.runningCash : openingCash;
+  const displayOnlineBalance = lastEntryOfMonth ? lastEntryOfMonth.runningOnline : openingOnline;
   const displayTotalBalance = displayCashBalance + displayOnlineBalance;
 
-  // Filter transactions to show for the selected year
-  const dashboardTransactions = [...entriesWithRunningBalance]
-    .filter(e => new Date(e.date).getFullYear() === selectedYear)
-    .reverse(); // Newest first
+  const availableYears = [...new Set(entries.map(e => new Date(e.date).getFullYear()))];
+  const currentYear = new Date().getFullYear();
+  if (!availableYears.includes(currentYear)) availableYears.push(currentYear);
+  availableYears.sort((a, b) => b - a);
 
-  const SummaryCard = ({ title, amount, icon: Icon, gradient, subtitle }) => (
-    <div className={`p-6 rounded-[2.5rem] text-white shadow-xl ${gradient} relative overflow-hidden group h-full`}>
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  const SummaryCard = ({ title, amount, icon: Icon, gradient, subtitle, small, footer, hideWords }) => (
+    <div className={cn(
+      "rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group transition-all hover:scale-[1.02] h-full",
+      gradient,
+      small ? "p-5" : "py-5 px-6"
+    )}>
       <div className="absolute -right-4 -top-4 bg-white/10 w-24 h-24 rounded-full group-hover:scale-110 transition-transform duration-500" />
-      <div className="flex justify-between items-start mb-4">
-        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-          <Icon size={24} />
+      <div className="flex justify-between items-start mb-3">
+        <div className={cn("rounded-xl backdrop-blur-sm", small ? "p-1.5 bg-white/10" : "p-2 bg-white/20")}>
+          <Icon size={small ? 18 : 22} />
         </div>
-        <span className="text-xs font-bold uppercase tracking-wider opacity-80">{subtitle}</span>
+        <span className="text-[9px] font-black uppercase tracking-widest opacity-60">{subtitle}</span>
       </div>
-      <h3 className="text-sm font-medium opacity-90 mb-1">{title}</h3>
-      <div className="text-3xl font-black">{formatCurrency(amount)}</div>
+      <h3 className={cn("font-bold opacity-90 mb-0.5", small ? "text-[10px] uppercase tracking-wider" : "text-xs")}>{title}</h3>
+      <div className={cn("font-black tracking-tight", small ? "text-xl" : "text-3xl")}>{formatCurrency(amount)}</div>
+      
+      {!hideWords && (
+        <div className="text-[8px] font-black uppercase tracking-[0.15em] opacity-40 mt-1 truncate">
+          {numberToWords(amount)}
+        </div>
+      )}
+      
+      {footer && (
+        <div className="mt-2 flex justify-between items-center text-[9px] font-black uppercase tracking-widest opacity-70">
+          {footer}
+        </div>
+      )}
     </div>
   );
 
   return (
     <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-        <div>
-          <h1 className="text-4xl font-black text-slate-800 tracking-tight">DaalRoti <span className="text-primary">Tracker</span></h1>
-          <p className="text-slate-400 font-bold text-sm uppercase mt-1">
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
+      <header className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+          <div>
+            <h1 className="text-4xl font-black text-slate-800 tracking-tight">DaalRoti <span className="text-primary">Tracker</span></h1>
+            <p className="text-slate-400 font-bold text-sm uppercase mt-1">
+              {months[selectedMonth - 1]} {selectedYear} Overview
+            </p>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 scroll-smooth">
+            {availableYears.map(year => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={cn(
+                  "px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  selectedYear === year 
+                    ? "bg-slate-900 text-white shadow-lg scale-105" 
+                    : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
+                )}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 scroll-smooth">
-          {availableYears.map(year => (
+
+        {/* Month Selector */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 scroll-smooth bg-slate-50 p-2 rounded-2xl border border-slate-100">
+          {months.map((month, idx) => (
             <button
-              key={year}
-              onClick={() => setSelectedYear(year)}
+              key={month}
+              onClick={() => setSelectedMonth(idx + 1)}
               className={cn(
-                "px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                selectedYear === year 
-                  ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105" 
-                  : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
+                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                selectedMonth === idx + 1 
+                  ? "bg-primary text-slate-900 shadow-md" 
+                  : "text-slate-400 hover:text-slate-600"
               )}
             >
-              {year}
+              {month}
             </button>
           ))}
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
+      {/* Main Dashboard Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Main Balance Card */}
+        <div className="md:col-span-4">
           <SummaryCard 
-            title="Total Balance" 
+            title="Closing Balance" 
             amount={displayTotalBalance} 
             icon={Landmark} 
-            gradient="bg-gradient-to-br from-slate-800 to-slate-900"
-            subtitle={`${selectedYear} Net`}
+            gradient="bg-gradient-to-br from-slate-800 to-slate-950"
+            subtitle="Available Now"
+            hideWords={true}
+            footer={
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span>Cash: {formatCurrency(displayCashBalance)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-income" />
+                  <span>Online: {formatCurrency(displayOnlineBalance)}</span>
+                </div>
+              </>
+            }
           />
         </div>
-        <div className="md:col-span-1">
+
+        {/* Income Breakdown */}
+        <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <SummaryCard 
-            title="Cash Balance" 
-            amount={displayCashBalance} 
+            title="Cash Income" 
+            amount={monthCashIncome} 
             icon={Wallet} 
-            gradient="bg-gradient-to-br from-primary to-orange-600"
-            subtitle="In Hand"
+            gradient="bg-gradient-to-br from-primary to-amber-600"
+            subtitle="Monthly Cash"
           />
-        </div>
-        <div className="md:col-span-1">
           <SummaryCard 
-            title="Online Balance" 
-            amount={displayOnlineBalance} 
+            title="Online Income" 
+            amount={monthOnlineIncome} 
             icon={Smartphone} 
             gradient="bg-gradient-to-br from-income to-emerald-600"
-            subtitle="Digital"
+            subtitle="Monthly Online"
           />
         </div>
       </div>
@@ -156,9 +212,36 @@ const Dashboard = ({ entries, setActiveTab }) => {
           </div>
 
           <div className="space-y-4">
+            {/* Opening Balance (Carry Forward) Row */}
+            <div className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 bg-white/5 w-24 h-24 rounded-full" />
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-primary">
+                    <Calendar size={24} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Carry Forward</p>
+                    <h4 className="text-lg font-black text-white leading-tight">Opening Balance</h4>
+                  </div>
+                </div>
+                
+                <div className="flex gap-6">
+                   <div className="text-right border-r border-white/10 pr-6">
+                     <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Cash In Hand</p>
+                     <p className="text-lg font-black text-primary leading-none">{formatCurrency(openingCash)}</p>
+                   </div>
+                   <div className="text-right">
+                     <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Online/Bank</p>
+                     <p className="text-lg font-black text-income leading-none">{formatCurrency(openingOnline)}</p>
+                   </div>
+                </div>
+              </div>
+            </div>
+
             {dashboardTransactions.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
-                <p className="text-slate-400 font-bold">No entries for {selectedYear}</p>
+                <p className="text-slate-400 font-bold">No entries for {months[selectedMonth - 1]} {selectedYear}</p>
               </div>
             ) : (
               dashboardTransactions.slice(0, 4).map((entry) => {

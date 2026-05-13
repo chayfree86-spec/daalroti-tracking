@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn, formatDate } from '../lib/utils';
 import CustomCalendar from '../components/CustomCalendar';
 import CustomAlert from '../components/CustomAlert';
 
-const AddEntry = ({ onSave, editData, onCancel }) => {
+const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     cashIncome: '',
@@ -14,6 +15,9 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
     incomeRemark: 'Income',
     spendRemark: 'Spend',
   });
+
+  const [activeSuggestionField, setActiveSuggestionField] = useState(null);
+  const uniqueRemarks = Array.from(new Set(entries.map(e => e.remark).filter(Boolean)));
 
   useEffect(() => {
     if (editData) {
@@ -38,7 +42,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
 
-  // Refs for focus management (User Rule Requirement)
   const cashIncomeRef = useRef(null);
   const onlineIncomeRef = useRef(null);
   const incomeRemarkRef = useRef(null);
@@ -56,9 +59,15 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
 
   const handleKeyDown = (e, nextRef) => {
     if (e.key === 'Enter') {
+      if (activeSuggestionField) return;
       e.preventDefault();
       nextRef.current?.focus();
     }
+  };
+
+  const selectSuggestion = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setActiveSuggestionField(null);
   };
 
   const handleSaveIncome = (e) => {
@@ -85,7 +94,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
     };
     onSave(entry);
     
-    // Clear income fields after save, reset to default remark
     setFormData(prev => ({ 
       ...prev, 
       cashIncome: '', 
@@ -125,7 +133,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
     };
     onSave(entry);
     
-    // Clear spend fields after save, reset to default remark
     setFormData(prev => ({ 
       ...prev, 
       cashSpend: '', 
@@ -136,7 +143,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
     setAlert({
         show: true,
         type: 'success',
-        title: 'Spend Saved!',
         title: editData ? 'Spend Updated!' : 'Spend Saved!',
         message: `Spend entry for ${formatDate(formData.date)} recorded.`
     });
@@ -160,7 +166,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
           <p className="text-slate-400 font-bold text-sm uppercase">Daily Revenue Tracking</p>
         </div>
 
-        {/* Custom Date Picker at Top Right for Web, Center for Mobile */}
         <div className="space-y-2 min-w-[200px] flex flex-col items-end">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 justify-end">
             Entry Date
@@ -195,7 +200,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
-        {/* Income Section */}
         <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
@@ -218,6 +222,7 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                   name="cashIncome"
                   value={formData.cashIncome}
                   onChange={handleChange}
+                  onFocus={(e) => e.target.select()}
                   onKeyDown={(e) => handleKeyDown(e, onlineIncomeRef)}
                   placeholder="0"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
@@ -234,6 +239,7 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                   name="onlineIncome"
                   value={formData.onlineIncome}
                   onChange={handleChange}
+                  onFocus={(e) => e.target.select()}
                   onKeyDown={(e) => handleKeyDown(e, incomeRemarkRef)}
                   placeholder="0"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
@@ -241,7 +247,7 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-slate-50">
+            <div className="space-y-2 pt-2 border-t border-slate-50 relative">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 Remark / Reason
                 <MessageSquare size={12} className="text-primary" />
@@ -252,10 +258,37 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                 name="incomeRemark"
                 value={formData.incomeRemark}
                 onChange={handleChange}
+                onFocus={(e) => {
+                   e.target.select();
+                   setActiveSuggestionField('income');
+                }}
+                onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)}
                 onKeyDown={(e) => handleKeyDown(e, incomeSubmitRef)}
                 placeholder="E.g. Salary, Gift, Bonus..."
+                autoComplete="off"
                 className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
               />
+              
+              <AnimatePresence>
+                {activeSuggestionField === 'income' && uniqueRemarks.filter(r => r.toLowerCase().includes(formData.incomeRemark.toLowerCase())).length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute z-50 left-0 right-0 top-[100%] mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+                  >
+                    {uniqueRemarks.filter(r => r.toLowerCase().includes(formData.incomeRemark.toLowerCase())).slice(0, 5).map((rem, i) => (
+                      <button
+                        key={i}
+                        onClick={() => selectSuggestion('incomeRemark', rem)}
+                        className="w-full text-left px-6 py-4 hover:bg-slate-50 font-bold text-slate-600 text-sm border-b border-slate-50 last:border-0 transition-colors"
+                      >
+                        {rem}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -269,7 +302,6 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
           </button>
         </div>
 
-        {/* Spend Section */}
         <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
@@ -292,6 +324,7 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                     name="cashSpend"
                     value={formData.cashSpend}
                     onChange={handleChange}
+                    onFocus={(e) => e.target.select()}
                     onKeyDown={(e) => handleKeyDown(e, onlineSpendRef)}
                     placeholder="0"
                     className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
@@ -308,6 +341,7 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                     name="onlineSpend"
                     value={formData.onlineSpend}
                     onChange={handleChange}
+                    onFocus={(e) => e.target.select()}
                     onKeyDown={(e) => handleKeyDown(e, spendRemarkRef)}
                     placeholder="0"
                     className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
@@ -315,7 +349,7 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-slate-50">
+              <div className="space-y-2 pt-2 border-t border-slate-50 relative">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   Remark / Reason
                   <MessageSquare size={12} className="text-primary" />
@@ -326,10 +360,37 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
                   name="spendRemark"
                   value={formData.spendRemark}
                   onChange={handleChange}
+                  onFocus={(e) => {
+                     e.target.select();
+                     setActiveSuggestionField('spend');
+                  }}
+                  onBlur={() => setTimeout(() => setActiveSuggestionField(null), 200)}
                   onKeyDown={(e) => handleKeyDown(e, spendSubmitRef)}
                   placeholder="E.g. Dinner, Salary, Rent..."
+                  autoComplete="off"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
+
+                <AnimatePresence>
+                  {activeSuggestionField === 'spend' && uniqueRemarks.filter(r => r.toLowerCase().includes(formData.spendRemark.toLowerCase())).length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute z-50 left-0 right-0 top-[100%] mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+                    >
+                      {uniqueRemarks.filter(r => r.toLowerCase().includes(formData.spendRemark.toLowerCase())).slice(0, 5).map((rem, i) => (
+                        <button
+                          key={i}
+                          onClick={() => selectSuggestion('spendRemark', rem)}
+                          className="w-full text-left px-6 py-4 hover:bg-slate-50 font-bold text-slate-600 text-sm border-b border-slate-50 last:border-0 transition-colors"
+                        >
+                          {rem}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -340,12 +401,11 @@ const AddEntry = ({ onSave, editData, onCancel }) => {
             className="mt-8 w-full h-[70px] rounded-3xl bg-spend text-white font-black text-lg shadow-xl shadow-spend/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:brightness-110"
           >
             <Save size={24} className="rotate-180" />
-            Save Spend
+            {editData ? 'Update Spend' : 'Save Spend'}
           </button>
         </div>
       </div>
 
-      {/* Custom Components */}
       {showCalendar && (
         <CustomCalendar 
           selectedDate={formData.date}
