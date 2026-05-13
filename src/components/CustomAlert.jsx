@@ -1,0 +1,49 @@
+import React from 'react';
+import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
+import { cn } from '../lib/utils';
+
+const CustomAlert = ({ type = 'info', title, message, onConfirm, onCancel, show }) => {
+  if (!show) return null;
+
+  const icons = {
+    info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
+    success: { icon: CheckCircle2, color: 'text-income', bg: 'bg-income/10' },
+    error: { icon: AlertCircle, color: 'text-spend', bg: 'bg-spend/10' },
+  };
+
+  const { icon: Icon, color, bg } = icons[type];
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[200] p-6 animate-in fade-in duration-300">
+      <div className="bg-white rounded-[3rem] shadow-2xl border border-slate-100 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 p-8 text-center space-y-6">
+        <div className={cn("w-20 h-20 rounded-[2rem] mx-auto flex items-center justify-center mb-2", bg)}>
+          <Icon size={40} className={color} />
+        </div>
+        
+        <div>
+          <h3 className="text-2xl font-black text-slate-800 tracking-tight">{title}</h3>
+          <p className="text-slate-500 font-bold text-sm mt-2">{message}</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={onConfirm}
+            className="w-full py-4 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all"
+          >
+            {onCancel ? 'Confirm' : 'Got it'}
+          </button>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="w-full py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-sm uppercase tracking-widest hover:bg-slate-100 transition-all"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CustomAlert;
