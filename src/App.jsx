@@ -99,7 +99,15 @@ function App() {
     try {
       const data = await fetchFromSheet();
       if (data && Array.isArray(data)) {
-        setEntries(data);
+        const normalized = data.map(item => {
+          const newItem = {};
+          Object.keys(item).forEach(key => {
+            const normalizedKey = key.toLowerCase();
+            newItem[normalizedKey] = item[key];
+          });
+          return newItem;
+        });
+        setEntries(normalized);
       }
     } catch (error) {
       console.error('Fetch failed');

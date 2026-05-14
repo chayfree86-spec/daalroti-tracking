@@ -14,8 +14,30 @@ export function formatCurrency(amount) {
 }
 
 export function formatDate(dateStr) {
-  const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', options);
+  if (!dateStr) return 'N/A';
+  try {
+    // Handle YYYY-MM-DD or DD-MM-YYYY
+    let parsedDate;
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        parsedDate = new Date(dateStr + 'T00:00:00');
+      } else {
+        // DD-MM-YYYY
+        parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+      }
+    } else {
+      parsedDate = new Date(dateStr);
+    }
+
+    if (isNaN(parsedDate.getTime())) return 'Invalid Date';
+    
+    const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+    return parsedDate.toLocaleDateString('en-IN', options);
+  } catch (e) {
+    return 'Invalid Date';
+  }
 }
 
 export function numberToWords(num) {
