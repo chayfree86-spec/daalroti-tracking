@@ -19,8 +19,12 @@ const Dashboard = ({ entries, setActiveTab }) => {
     const cashDelta = (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
     const onlineDelta = (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
     
-    runningCash += cashDelta;
-    runningOnline += onlineDelta;
+    // Use sheet values if available, otherwise fallback to local calculation
+    const currentEntryCashBal = entry.cashBalance !== undefined ? Number(entry.cashBalance) : (runningCash + cashDelta);
+    const currentEntryOnlineBal = entry.onlineBalance !== undefined ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
+    
+    runningCash = currentEntryCashBal;
+    runningOnline = currentEntryOnlineBal;
     
     return {
       ...entry,

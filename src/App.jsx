@@ -31,10 +31,30 @@ function App() {
 
   // Sync Logic
   const handleSync = useCallback(async (dataToSync = entries) => {
-    if (!getSyncUrl()) return;
+    if (!getSyncUrl() || dataToSync.length === 0) return;
     setIsSyncing(true);
+
+    // Calculate Running Balances before syncing so they appear in the Sheet
+    const sortedForSync = [...dataToSync].sort((a, b) => {
+      if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
+      return a.id - b.id;
+    });
+
+    let runningCash = 0;
+    let runningOnline = 0;
+    const enrichedData = sortedForSync.map(entry => {
+      runningCash += (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
+      runningOnline += (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
+      return {
+        ...entry,
+        cashBalance: runningCash,
+        onlineBalance: runningOnline,
+        totalBalance: runningCash + runningOnline
+      };
+    });
+
     try {
-      await syncToSheet(dataToSync);
+      await syncToSheet(enrichedData);
       const now = new Date().toLocaleTimeString();
       setLastSynced(now);
       localStorage.setItem('dr_last_sync', now);

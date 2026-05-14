@@ -29,8 +29,8 @@ const Analytics = ({ entries }) => {
         groupKey = entry.date.slice(0, 7); // YYYY-MM
       }
 
-      const income = (entry.cashIncome || 0) + (entry.onlineIncome || 0);
-      const spend = (entry.cashSpend || 0) + (entry.onlineSpend || 0);
+      const income = Number(entry.cashIncome || 0) + Number(entry.onlineIncome || 0);
+      const spend = Number(entry.cashSpend || 0) + Number(entry.onlineSpend || 0);
 
       if (!monthMap[groupKey]) {
         monthMap[groupKey] = { month: groupKey, income: 0, spend: 0, net: 0 };
