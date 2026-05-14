@@ -106,7 +106,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: '',
       remark: toTitleCase(formData.incomeRemark.trim()) || 'Income',
       id: Date.now(),
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
     };
     onSave(entry);
     
@@ -138,7 +138,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: formData.onlineSpend,
       remark: toTitleCase(formData.spendRemark.trim()) || 'Spend',
       id: Date.now(),
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
     };
     onSave(entry);
     
