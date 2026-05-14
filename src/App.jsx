@@ -142,6 +142,43 @@ function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // LIVE BACKGROUND SYNC: Periodically check for updates from other devices
+  useEffect(() => {
+    if (!getSyncUrl()) return;
+
+    const liveSyncInterval = setInterval(async () => {
+      // Don't background sync if we are already syncing or editing
+      if (isSyncing || editingId) return;
+
+      try {
+        const data = await fetchFromSheet();
+        if (data && Array.isArray(data) && data.length > 0) {
+          const normalized = data.map(normalizeEntry);
+          
+          // Check if data is actually different before updating
+          // This prevents unnecessary re-renders
+          const currentDataStr = JSON.stringify(entries);
+          const newDataStr = JSON.stringify(normalized);
+          
+          if (newDataStr !== currentDataStr) {
+            console.log('Background Sync: Fresh data found!');
+            skipAutoSync.current = true;
+            setEntries(normalized);
+            
+            // Optional: Update last synced time
+            const now = new Date().toLocaleTimeString();
+            setLastSynced(now);
+            localStorage.setItem('dr_last_sync', now);
+          }
+        }
+      } catch (error) {
+        console.warn('Background sync check failed');
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(liveSyncInterval);
+  }, [entries, isSyncing, editingId]);
+
   useEffect(() => {
     localStorage.setItem('dr_entries', JSON.stringify(entries));
 
