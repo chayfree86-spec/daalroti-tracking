@@ -148,7 +148,7 @@ function App() {
 
     const liveSyncInterval = setInterval(async () => {
       // Don't background sync if we are already syncing or editing
-      if (isSyncing || editingId) return;
+      if (isSyncing || editingEntry) return;
 
       try {
         const data = await fetchFromSheet();
@@ -177,7 +177,7 @@ function App() {
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(liveSyncInterval);
-  }, [entries, isSyncing, editingId]);
+  }, [entries, isSyncing, editingEntry]);
 
   useEffect(() => {
     localStorage.setItem('dr_entries', JSON.stringify(entries));
