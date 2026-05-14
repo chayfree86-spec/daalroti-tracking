@@ -112,6 +112,10 @@ function App() {
       }
       // Mark session as fetched — sync is now safe
       hasFetchedThisSession.current = true;
+      // Update last synced time so user knows data was refreshed
+      const now = new Date().toLocaleTimeString();
+      setLastSynced(now);
+      localStorage.setItem('dr_last_sync', now);
     } catch (error) {
       console.error('Fetch failed');
       setAppAlert({ show: true, type: 'error', title: 'Fetch Failed!', message: 'Google Sheet se data nahi aa paaya. URL check karein.' });
