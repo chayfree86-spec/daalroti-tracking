@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Dashboard from './pages/Dashboard';
 import AddEntry from './pages/AddEntry';
 import History from './pages/History';
@@ -30,6 +30,7 @@ function App() {
   const [lastSynced, setLastSynced] = useState(localStorage.getItem('dr_last_sync') || 'Never');
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
   const [appAlert, setAppAlert] = useState({ show: false, type: 'success', title: '', message: '' });
+  const skipAutoSync = useRef(false);
 
   const handleTabChange = (tabId) => {
     // Always clear editing state when navigating via tabs, 
@@ -64,6 +65,14 @@ function App() {
         totalBalance: runningCash + runningOnline
       };
 
+      // Fix timestamp: convert numeric to readable string
+      if (rawEntry.timestamp && typeof rawEntry.timestamp === 'number') {
+        const ts = new Date(rawEntry.timestamp);
+        rawEntry.timestamp = isNaN(ts.getTime()) 
+          ? '' 
+          : ts.toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      }
+
       // Create a new object with all lowercase keys to match Google Sheet
       const syncEntry = {};
       Object.keys(rawEntry).forEach(key => {
@@ -91,6 +100,7 @@ function App() {
       const data = await fetchFromSheet();
       if (data && Array.isArray(data)) {
         const normalized = data.map(normalizeEntry);
+        skipAutoSync.current = true; // Don't auto-sync fetched data back
         setEntries(normalized);
       }
     } catch (error) {
@@ -102,6 +112,13 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('dr_entries', JSON.stringify(entries));
+
+    // Skip auto-sync if this update came from a fetch
+    if (skipAutoSync.current) {
+      skipAutoSync.current = false;
+      return;
+    }
+
     // Auto-sync after 2 seconds of inactivity
     const timeout = setTimeout(() => {
       handleSync(entries);
