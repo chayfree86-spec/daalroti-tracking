@@ -54,14 +54,22 @@ function App() {
     let runningCash = 0;
     let runningOnline = 0;
     const enrichedData = sortedForSync.map(entry => {
-      runningCash += (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
-      runningOnline += (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
-      return {
+      runningCash += (Number(entry.cashIncome || entry.cashincome || 0) - Number(entry.cashSpend || entry.cashspend || 0));
+      runningOnline += (Number(entry.onlineIncome || entry.onlineincome || 0) - Number(entry.onlineSpend || entry.onlinespend || 0));
+      
+      const rawEntry = {
         ...entry,
         cashBalance: runningCash,
         onlineBalance: runningOnline,
         totalBalance: runningCash + runningOnline
       };
+
+      // Create a new object with all lowercase keys to match Google Sheet
+      const syncEntry = {};
+      Object.keys(rawEntry).forEach(key => {
+        syncEntry[key.toLowerCase()] = rawEntry[key];
+      });
+      return syncEntry;
     });
 
     try {
