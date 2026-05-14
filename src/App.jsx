@@ -106,13 +106,24 @@ function App() {
     try {
       const data = await fetchFromSheet();
       if (data && Array.isArray(data)) {
-        const normalized = data.map(normalizeEntry);
-        skipAutoSync.current = true; // Don't auto-sync fetched data back
-        setEntries(normalized);
+        if (data.length > 0) {
+          // Sheet has data — update local
+          const normalized = data.map(normalizeEntry);
+          skipAutoSync.current = true; // Don't auto-sync fetched data back
+          setEntries(normalized);
+          // Mark session as fetched — sync is now safe
+          hasFetchedThisSession.current = true;
+        } else if (entries.length > 0) {
+          // SAFEGUARD: Sheet returned empty but we have local data
+          // DON'T overwrite! Keep local data safe.
+          hasFetchedThisSession.current = true; // Allow sync so local data can push to sheet
+          setAppAlert({ show: true, type: 'warning', title: 'Sheet Empty!', message: 'Google Sheet mein koi data nahi mila. Local data safe hai.' });
+        } else {
+          // Both empty — nothing to do
+          hasFetchedThisSession.current = true;
+        }
       }
-      // Mark session as fetched — sync is now safe
-      hasFetchedThisSession.current = true;
-      // Update last synced time so user knows data was refreshed
+      // Update last synced time
       const now = new Date().toLocaleTimeString();
       setLastSynced(now);
       localStorage.setItem('dr_last_sync', now);
