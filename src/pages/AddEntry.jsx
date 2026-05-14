@@ -22,13 +22,23 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   useEffect(() => {
     if (editData) {
       setFormData({
-        date: editData.date,
-        cashIncome: editData.cashIncome || '',
-        onlineIncome: editData.onlineIncome || '',
-        cashSpend: editData.cashSpend || '',
-        onlineSpend: editData.onlineSpend || '',
+        date: editData.date || new Date().toISOString().split('T')[0],
+        cashIncome: editData.cashIncome !== undefined && editData.cashIncome !== null && editData.cashIncome !== '' ? String(editData.cashIncome) : '',
+        onlineIncome: editData.onlineIncome !== undefined && editData.onlineIncome !== null && editData.onlineIncome !== '' ? String(editData.onlineIncome) : '',
+        cashSpend: editData.cashSpend !== undefined && editData.cashSpend !== null && editData.cashSpend !== '' ? String(editData.cashSpend) : '',
+        onlineSpend: editData.onlineSpend !== undefined && editData.onlineSpend !== null && editData.onlineSpend !== '' ? String(editData.onlineSpend) : '',
         incomeRemark: editData.incomeRemark || editData.remark || 'Income',
         spendRemark: editData.spendRemark || editData.remark || 'Spend',
+      });
+    } else {
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        cashIncome: '',
+        onlineIncome: '',
+        cashSpend: '',
+        onlineSpend: '',
+        incomeRemark: 'Income',
+        spendRemark: 'Spend',
       });
     }
   }, [editData]);
@@ -141,7 +151,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   };
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-12">
+    <div className="container mx-auto p-6 pt-6 max-w-4xl">
       <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
         <div className="flex items-center gap-4">
           <div>
@@ -189,8 +199,13 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
-        <form onSubmit={handleSaveIncome} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+      {/* Conditional Forms Rendering */}
+      <div className={cn(
+        "grid gap-8 animate-fade-in",
+        (!editData) ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 max-w-2xl mx-auto"
+      )}>
+        {(!editData || (editData.cashIncome || editData.onlineIncome)) && (
+        <form onSubmit={handleSaveIncome} className="order-2 md:order-1 bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-income/10 text-income flex items-center justify-center">
@@ -216,6 +231,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                   onKeyDown={(e) => handleKeyDown(e, onlineIncomeRef)}
                   onWheel={(e) => e.target.blur()}
                   placeholder="0"
+                  inputMode="decimal"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
               </div>
@@ -234,6 +250,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                   onKeyDown={(e) => handleKeyDown(e, incomeRemarkRef)}
                   onWheel={(e) => e.target.blur()}
                   placeholder="0"
+                  inputMode="decimal"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
               </div>
@@ -294,8 +311,10 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
             {editData ? 'Update Income' : 'Save Income'}
           </button>
         </form>
+        )}
 
-        <form onSubmit={handleSaveSpend} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+        {(!editData || (editData.cashSpend || editData.onlineSpend)) && (
+        <form onSubmit={handleSaveSpend} className="order-1 md:order-2 bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-spend/10 text-spend flex items-center justify-center">
@@ -321,6 +340,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                     onKeyDown={(e) => handleKeyDown(e, onlineSpendRef)}
                     onWheel={(e) => e.target.blur()}
                     placeholder="0"
+                    inputMode="decimal"
                     className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
                 </div>
@@ -339,6 +359,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                     onKeyDown={(e) => handleKeyDown(e, spendRemarkRef)}
                     onWheel={(e) => e.target.blur()}
                     placeholder="0"
+                    inputMode="decimal"
                     className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
                 </div>
@@ -400,6 +421,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
             {editData ? 'Update Spend' : 'Save Spend'}
           </button>
         </form>
+        )}
       </div>
 
       {showCalendar && (

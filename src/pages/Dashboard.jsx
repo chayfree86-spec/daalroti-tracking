@@ -173,9 +173,9 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
   };
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-24">
+    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl">
       <header className="flex flex-col gap-6">
-        <div className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 gap-6">
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">DaalRoti <span className="text-primary">Tracker</span></h1>
@@ -186,7 +186,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
             {syncStatus}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 self-end sm:self-auto">
             {!isAllTime && (
               <CustomDropdown 
                 value={selectedMonth}
@@ -343,10 +343,10 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
                             </div>
                         </div>
                         
-                        <div className="flex flex-wrap gap-4 items-center justify-end">
-                            <div className="flex gap-4">
+                        <div className="flex flex-row md:items-center justify-between md:justify-end gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-50">
+                            <div className="flex gap-6">
                                 {entry.cashDelta !== 0 && (
-                                    <div className="text-right">
+                                    <div className="text-left md:text-right">
                                         <p className="text-[8px] font-black text-slate-300 uppercase">Cash</p>
                                         <p className={cn("text-sm font-black", entry.cashDelta > 0 ? "text-income/70" : "text-spend")}>
                                             {entry.cashDelta > 0 ? '+' : ''}{formatCurrency(entry.cashDelta)}
@@ -354,7 +354,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
                                     </div>
                                 )}
                                 {entry.onlineDelta !== 0 && (
-                                    <div className="text-right">
+                                    <div className="text-left md:text-right">
                                         <p className="text-[8px] font-black text-slate-300 uppercase">Online</p>
                                         <p className={cn("text-sm font-black", entry.onlineDelta > 0 ? "text-income/70" : "text-spend")}>
                                             {entry.onlineDelta > 0 ? '+' : ''}{formatCurrency(entry.onlineDelta)}

@@ -187,10 +187,10 @@ const Analytics = ({ entries, syncStatus }) => {
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-10 max-w-6xl pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="container mx-auto p-6 pt-6 space-y-10 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* Header with Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50">
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Business Intelligence</h1>
@@ -199,7 +199,7 @@ const Analytics = ({ entries, syncStatus }) => {
           {syncStatus}
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
           {!isAllTime && (
             <CustomDropdown 
               value={selectedMonth}
@@ -325,12 +325,12 @@ const Analytics = ({ entries, syncStatus }) => {
                 </span>
              </div>
           </div>
-          <div className="flex justify-around bg-slate-50 p-6 rounded-[2rem]">
+          <div className="flex flex-col sm:flex-row justify-around bg-slate-50 p-6 rounded-[2rem] gap-4">
             <div className="text-center">
               <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Cash in hand</p>
               <p className="text-lg font-black text-primary leading-none">{formatCurrency(stats.cashBalance)}</p>
             </div>
-            <div className="w-px h-8 bg-slate-200 self-center" />
+            <div className="hidden sm:block w-px h-8 bg-slate-200 self-center" />
             <div className="text-center">
               <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Online / Bank</p>
               <p className="text-lg font-black text-blue-500 leading-none">{formatCurrency(stats.onlineBalance)}</p>

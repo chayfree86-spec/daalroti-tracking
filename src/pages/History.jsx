@@ -211,7 +211,7 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   );
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-24">
+    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl">
       <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
           <div>

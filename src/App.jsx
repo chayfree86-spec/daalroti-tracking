@@ -13,6 +13,7 @@ import { cn } from './lib/utils';
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [editingEntry, setEditingEntry] = useState(null);
+  const [returnTab, setReturnTab] = useState('dashboard');
   const [entries, setEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('dr_entries');
@@ -118,6 +119,7 @@ function App() {
   };
 
   const handleEdit = (entry) => {
+    setReturnTab(activeTab);
     setEditingEntry(entry);
     setActiveTab('add');
   };
@@ -164,24 +166,29 @@ function App() {
               title: entry.cashIncome || entry.onlineIncome ? 'Income Saved!' : 'Spend Saved!',
               message: 'Transaction has been recorded successfully.'
             });
-            setTimeout(() => handleTabChange('dashboard'), 100);
+            setTimeout(() => handleTabChange(returnTab), 100);
+            setReturnTab('dashboard');
           }} 
           onCancel={() => {
             setEditingEntry(null);
-            setTimeout(() => handleTabChange('dashboard'), 100);
+            setTimeout(() => handleTabChange(returnTab), 100);
+            setReturnTab('dashboard');
           }}
         />;
       case 'reports':
         return <History 
           entries={entries} 
           onDelete={deleteEntry} 
+          onEdit={handleEdit}
           onSave={(entry) => {
             addEntry(entry);
-            setTimeout(() => handleTabChange('dashboard'), 100);
+            setTimeout(() => handleTabChange(returnTab), 100);
+            setReturnTab('dashboard');
           }} 
           onCancel={() => {
             setEditingEntry(null);
-            setTimeout(() => handleTabChange('dashboard'), 100);
+            setTimeout(() => handleTabChange(returnTab), 100);
+            setReturnTab('dashboard');
           }} 
           highlightedEntryId={highlightedEntryId} 
           setHighlightedEntryId={setHighlightedEntryId} 
@@ -195,9 +202,7 @@ function App() {
   };
 
   return (
-    <div className={cn("min-h-screen bg-background transition-all duration-300", 
-      activeTab === 'dashboard' ? "pb-32" : "pb-24"
-    )}>
+    <div className={cn("min-h-screen bg-background transition-all duration-300 pb-24")}>
 
 
       <AnimatePresence mode="wait">
@@ -214,7 +219,7 @@ function App() {
 
       {/* Page Footer - Show ONLY on Dashboard */}
       {activeTab === 'dashboard' && (
-        <footer className="container mx-auto px-6 py-8 border-t border-slate-100 mt-6 mb-24">
+        <footer className="container mx-auto px-6 py-4 md:py-8 border-t border-slate-100 mt-2 md:mt-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-xl shadow-lg">
@@ -239,7 +244,7 @@ function App() {
               </div>
             </div>
           </div>
-          <p className="text-center text-slate-300 font-bold text-[10px] uppercase tracking-widest mt-12">
+          <p className="text-center text-slate-300 font-bold text-[10px] uppercase tracking-widest mt-6">
             Designed for Clarity & Efficiency
           </p>
         </footer>

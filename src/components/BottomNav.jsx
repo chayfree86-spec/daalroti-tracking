@@ -10,7 +10,7 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl border border-white/10 px-8 py-4 rounded-[2.5rem] flex gap-10 items-center z-50 shadow-2xl max-w-fit mx-auto">
+    <nav className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl border border-white/10 px-3 py-2 md:px-8 md:py-4 rounded-[2rem] md:rounded-[2.5rem] flex gap-2 md:gap-10 items-center z-50 shadow-2xl w-[92%] sm:w-auto max-w-fit justify-around md:justify-start">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -20,7 +20,7 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-3 transition-all duration-500 relative px-4 py-2 rounded-2xl group",
+              "flex items-center gap-2 md:gap-3 transition-all duration-500 relative px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl group",
               isActive ? "text-primary bg-primary/10" : "text-slate-400 hover:text-slate-200"
             )}
           >
