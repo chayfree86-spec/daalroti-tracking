@@ -122,7 +122,7 @@ function App() {
   const renderScreen = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard entries={entries} setActiveTab={setActiveTab} />;
+        return <Dashboard entries={entries} setEntries={setEntries} setActiveTab={setActiveTab} />;
       case 'analytics':
         return <Analytics entries={entries} />;
       case 'add':

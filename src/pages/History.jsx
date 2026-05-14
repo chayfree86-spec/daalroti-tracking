@@ -39,7 +39,7 @@ const History = ({ entries, onDelete, onEdit }) => {
   }).reverse();
 
   const filteredEntries = entriesWithBalance.filter(entry => {
-    const matchesSearch = entry.remark?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = (entry.remark || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                          entry.date.includes(searchTerm);
     const matchesMonth = filterMonth ? entry.date.startsWith(filterMonth) : true;
     
@@ -51,6 +51,48 @@ const History = ({ entries, onDelete, onEdit }) => {
 
     return matchesSearch && matchesMonth && matchesType;
   });
+
+  // Inject Virtual Tuesdays
+  const finalDisplayEntries = (() => {
+    const result = [...filteredEntries];
+    // Show virtual Tuesdays if no search is active and a month is selected
+    if (searchTerm === '' && filterMonth) {
+      const [year, month] = filterMonth.split('-').map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const d = new Date(dateStr + 'T00:00:00');
+        
+        // Skip future dates
+        if (d > today) continue;
+
+        if (d.getDay() === 2) {
+          // Check if this Tuesday already has an entry that matches the current filter (income/spend/all)
+          const hasMatchingEntry = filteredEntries.some(e => e.date === dateStr);
+          if (!hasMatchingEntry) {
+            result.push({
+              id: `virtual-tue-${dateStr}`,
+              date: dateStr,
+              remark: 'Shop Closed',
+              cashDelta: 0,
+              onlineDelta: 0,
+              runningTotal: 0, 
+              isVirtual: true
+            });
+          }
+        }
+      }
+    }
+    return result.sort((a, b) => {
+      const dateA = new Date(a.date + 'T00:00:00').getTime();
+      const dateB = new Date(b.date + 'T00:00:00').getTime();
+      if (dateA !== dateB) return dateB - dateA;
+      return (b.id || 0) - (a.id || 0);
+    });
+  })();
 
   // Calculate Summary for the filtered period
   const periodCashSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0), 0));
@@ -263,15 +305,16 @@ const History = ({ entries, onDelete, onEdit }) => {
         {/* Table Header - Visible on Desktop */}
         <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50 rounded-2xl border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
           <div className="col-span-2">Date</div>
-          <div className="col-span-3">Description</div>
+          <div className="col-span-2">Description</div>
           <div className="col-span-2 text-right">Cash</div>
           <div className="col-span-2 text-right">Online</div>
-          <div className="col-span-2 text-right pr-8">Closing</div>
+          <div className="col-span-2 text-right">Total</div>
+          <div className="col-span-1 text-right">Balance</div>
           <div className="col-span-1"></div>
         </div>
 
         <div className="space-y-3">
-          {filteredEntries.length === 0 ? (
+          {finalDisplayEntries.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
               <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                  <Search size={32} />
@@ -279,27 +322,38 @@ const History = ({ entries, onDelete, onEdit }) => {
               <p className="text-slate-400 font-black uppercase text-sm tracking-widest">No matching records found</p>
             </div>
           ) : (
-            filteredEntries.map((entry) => {
-              const totalDelta = entry.cashDelta + entry.onlineDelta;
+            finalDisplayEntries.map((entry) => {
+              const totalDelta = (entry.cashDelta || 0) + (entry.onlineDelta || 0);
               const isPositive = totalDelta >= 0;
+              const isTuesday = new Date(entry.date + 'T00:00:00').getDay() === 2;
 
               return (
-                <div key={entry.id} className="bg-white px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border border-slate-50 group hover:border-primary/20 transition-all">
+                <div key={entry.id} className={cn(
+                  "px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all",
+                  entry.isVirtual ? "bg-slate-50/50 border-slate-100 opacity-60" : "bg-white border-slate-50 group hover:border-primary/20"
+                )}>
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                     
                     {/* Date & Icon */}
                     <div className="col-span-1 md:col-span-2 flex items-center gap-3">
                       <div className={cn(
                           "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
-                          isPositive ? "bg-income/5 text-income/60" : "bg-spend/10 text-spend"
+                          entry.isVirtual ? "bg-slate-200 text-slate-400" : (isPositive ? "bg-income/5 text-income/60" : "bg-spend/10 text-spend")
                       )}>
-                        {isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                        {entry.isVirtual ? <Calendar size={16} /> : (isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />)}
                       </div>
-                      <span className="text-xs font-bold text-slate-400 whitespace-nowrap">{formatDate(entry.date)}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-400 whitespace-nowrap">{formatDate(entry.date)}</span>
+                        {isTuesday && (
+                          <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
+                            Shop Closed
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Description */}
-                    <div className="col-span-1 md:col-span-3">
+                    <div className="col-span-1 md:col-span-2">
                       <p className="text-sm font-bold text-slate-600 truncate">
                         {entry.remark || (isPositive ? 'Income' : 'Spend')}
                       </p>
@@ -311,7 +365,7 @@ const History = ({ entries, onDelete, onEdit }) => {
                         <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
                         <p className={cn(
                           "text-sm font-black tracking-tight",
-                          entry.cashDelta > 0 ? "text-income/70" : entry.cashDelta < 0 ? "text-spend" : "text-slate-300"
+                          entry.cashDelta > 0 ? "text-amber-500" : entry.cashDelta < 0 ? "text-spend" : "text-slate-300"
                         )}>
                           {entry.cashDelta !== 0 ? (entry.cashDelta > 0 ? '+' : '') + formatCurrency(entry.cashDelta) : '-'}
                         </p>
@@ -331,28 +385,45 @@ const History = ({ entries, onDelete, onEdit }) => {
                       </div>
                     </div>
 
+                    {/* Total (Cash + Online) */}
+                    <div className="col-span-1 md:col-span-2 md:text-right">
+                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+                        <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Total</span>
+                        <p className={cn(
+                          "text-sm font-black tracking-tight",
+                          totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300"
+                        )}>
+                          {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Closing Balance */}
-                    <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+                    <div className="col-span-1 md:col-span-1 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
                       <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
                         <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Closing</span>
-                        <p className="text-sm font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
+                        <p className="text-xs font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
                       </div>
                     </div>
 
                     {/* Action */}
                     <div className="col-span-1 md:col-span-1 flex justify-end gap-2">
-                      <button 
-                        onClick={() => onEdit(entry)}
-                        className="p-2 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-xl"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => onDelete(entry.id)}
-                        className="p-2 text-spend/30 hover:text-spend transition-colors hover:bg-spend/5 rounded-xl"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {!entry.isVirtual && (
+                        <>
+                          <button 
+                            onClick={() => onEdit(entry)}
+                            className="p-2 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-xl"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button 
+                            onClick={() => onDelete(entry.id)}
+                            className="p-2 text-slate-200 hover:text-spend transition-colors hover:bg-spend/5 rounded-xl"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
 
                   </div>

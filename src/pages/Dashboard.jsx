@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
 import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
 
-const Dashboard = ({ entries, setActiveTab }) => {
+const Dashboard = ({ entries, setEntries, setActiveTab }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
@@ -158,6 +158,7 @@ const Dashboard = ({ entries, setActiveTab }) => {
         </div>
       </header>
 
+
       {/* Main Dashboard Cards */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Main Balance Card */}
@@ -261,49 +262,46 @@ const Dashboard = ({ entries, setActiveTab }) => {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className={cn(
-                                  "rounded-2xl flex items-center justify-center transition-all group-hover:scale-110",
-                                  isPositive 
-                                  ? "w-10 h-10 bg-income/5 text-income/60 group-hover:bg-income group-hover:text-white" 
-                                  : "w-12 h-12 bg-spend/10 text-spend group-hover:bg-spend group-hover:text-white"
+                                  "w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110",
+                                  isPositive ? "bg-income/5 text-income" : "bg-spend/10 text-spend"
                             )}>
-                                {isPositive ? <ArrowUpRight size={20} /> : <ArrowDownRight size={24} />}
+                                {isPositive ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
                             </div>
-                            <div className="overflow-hidden flex flex-col">
-                                <div className="bg-slate-100 self-start px-3 py-1 rounded-lg mb-2">
-                                  <span className="text-[10px] font-black text-slate-500 uppercase leading-none tracking-wider">{formatDate(entry.date)}</span>
-                                </div>
-                                <p className="text-sm font-bold text-slate-400 leading-tight truncate">
+                            <div className="flex flex-col">
+                                <span className="text-xs font-black text-slate-800">{formatDate(entry.date)}</span>
+                                {new Date(entry.date + 'T00:00:00').getDay() === 2 && (
+                                  <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
+                                    Shop Closed
+                                  </span>
+                                )}
+                                <p className="text-[10px] font-bold text-slate-400 mt-0.5 truncate max-w-[150px]">
                                   {entry.remark || (isPositive ? 'Income' : 'Spend')}
                                 </p>
-                                
-                                {/* Delta Details (Prominent Amount) */}
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                    {entry.cashDelta !== 0 && (
-                                        <span className={cn(
-                                          "tracking-tight", 
-                                          entry.cashDelta > 0 ? "text-lg font-bold text-income/70" : "text-xl font-black text-spend"
-                                        )}>
-                                            {entry.cashDelta > 0 ? '+' : ''}{formatCurrency(entry.cashDelta)}
-                                            <span className="text-[10px] uppercase ml-1 opacity-50 font-bold">Cash</span>
-                                        </span>
-                                    )}
-                                    {entry.onlineDelta !== 0 && (
-                                        <span className={cn(
-                                          "tracking-tight", 
-                                          entry.onlineDelta > 0 ? "text-lg font-bold text-income/70" : "text-xl font-black text-spend"
-                                        )}>
-                                            {entry.onlineDelta > 0 ? '+' : ''}{formatCurrency(entry.onlineDelta)}
-                                            <span className="text-[10px] uppercase ml-1 opacity-50 font-bold">Online</span>
-                                        </span>
-                                    )}
-                                </div>
                             </div>
                         </div>
                         
-                        <div className="flex gap-6 items-center justify-end">
-                            <div className="text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Closing Bal.</p>
-                                <p className="text-xl font-black text-slate-800 leading-none">{formatCurrency(entry.runningTotal)}</p>
+                        <div className="flex flex-wrap gap-4 items-center justify-end">
+                            <div className="flex gap-4">
+                                {entry.cashDelta !== 0 && (
+                                    <div className="text-right">
+                                        <p className="text-[8px] font-black text-slate-300 uppercase">Cash</p>
+                                        <p className={cn("text-sm font-black", entry.cashDelta > 0 ? "text-income/70" : "text-spend")}>
+                                            {entry.cashDelta > 0 ? '+' : ''}{formatCurrency(entry.cashDelta)}
+                                        </p>
+                                    </div>
+                                )}
+                                {entry.onlineDelta !== 0 && (
+                                    <div className="text-right">
+                                        <p className="text-[8px] font-black text-slate-300 uppercase">Online</p>
+                                        <p className={cn("text-sm font-black", entry.onlineDelta > 0 ? "text-income/70" : "text-spend")}>
+                                            {entry.onlineDelta > 0 ? '+' : ''}{formatCurrency(entry.onlineDelta)}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="text-right pl-4 border-l border-slate-50">
+                                <p className="text-[8px] font-black text-slate-400 uppercase">Closing</p>
+                                <p className="text-base font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
                             </div>
                         </div>
                     </div>

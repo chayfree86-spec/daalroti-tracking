@@ -14,8 +14,8 @@ export function formatCurrency(amount) {
 }
 
 export function formatDate(dateStr) {
-  const options = { day: 'numeric', month: 'short', year: 'numeric' };
-  return new Date(dateStr).toLocaleDateString('en-IN', options);
+  const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', options);
 }
 
 export function numberToWords(num) {

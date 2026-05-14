@@ -213,7 +213,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                   Cash Income
-                  <Wallet size={12} className="text-income" />
+                  <Wallet size={12} className="text-primary" />
                 </label>
                 <input
                   ref={cashIncomeRef}
@@ -225,7 +225,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                   onFocus={(e) => e.target.select()}
                   onKeyDown={(e) => handleKeyDown(e, onlineIncomeRef)}
                   placeholder="0"
-                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+                  className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
               </div>
               <div className="space-y-2">
@@ -316,7 +316,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     Cash Spend
-                    <Wallet size={12} className="text-spend" />
+                    <Wallet size={12} className="text-primary" />
                   </label>
                   <input
                     ref={cashSpendRef}
@@ -327,7 +327,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                     onFocus={(e) => e.target.select()}
                     onKeyDown={(e) => handleKeyDown(e, onlineSpendRef)}
                     placeholder="0"
-                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
+                    className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
                 </div>
                 <div className="space-y-2">
