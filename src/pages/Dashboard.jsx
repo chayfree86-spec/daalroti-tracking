@@ -2,15 +2,30 @@ import React, { useState } from 'react';
 import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
 import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
 
-const Dashboard = ({ entries, setEntries, setActiveTab }) => {
+const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [isAllTime, setIsAllTime] = useState(false);
   
   // Sort entries by date and then by ID (timestamp) to ensure consistent running balance
-  const sortedEntries = [...entries].sort((a, b) => {
+  const sortedEntries = entries ? [...entries].sort((a, b) => {
     if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
     return a.id - b.id;
-  });
+  }) : [];
+
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="container mx-auto p-6 pt-12 text-center h-[80vh] flex flex-col items-center justify-center space-y-6">
+        <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
+          <Landmark size={48} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">No Data Available</h2>
+          <p className="text-slate-400 font-bold mt-2 uppercase text-[10px] tracking-widest">Connect to Google Sheets or add an entry</p>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate Running Balances for ALL entries
   let runningCash = 0;
@@ -20,8 +35,12 @@ const Dashboard = ({ entries, setEntries, setActiveTab }) => {
     const onlineDelta = (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
     
     // Use sheet values if available, otherwise fallback to local calculation
-    const currentEntryCashBal = entry.cashBalance !== undefined ? Number(entry.cashBalance) : (runningCash + cashDelta);
-    const currentEntryOnlineBal = entry.onlineBalance !== undefined ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
+    // Important: check for empty string or null/undefined
+    const hasCashBal = entry.cashBalance !== undefined && entry.cashBalance !== "" && entry.cashBalance !== null;
+    const hasOnlineBal = entry.onlineBalance !== undefined && entry.onlineBalance !== "" && entry.onlineBalance !== null;
+    
+    const currentEntryCashBal = hasCashBal ? Number(entry.cashBalance) : (runningCash + cashDelta);
+    const currentEntryOnlineBal = hasOnlineBal ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
     
     runningCash = currentEntryCashBal;
     runningOnline = currentEntryOnlineBal;
@@ -37,39 +56,50 @@ const Dashboard = ({ entries, setEntries, setActiveTab }) => {
   });
 
   // Calculate Opening Balance (Everything before the selected month/year)
-  const firstDayOfMonth = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
-  const lastEntryBeforeMonth = [...entriesWithRunningBalance]
-    .filter(e => e.date < firstDayOfMonth)
+  const firstDayOfRange = selectedMonth === 'all' 
+    ? `${selectedYear}-01-01` 
+    : `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+
+  const lastEntryBeforeRange = [...entriesWithRunningBalance]
+    .filter(e => e.date < firstDayOfRange)
     .sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
 
-  const openingCash = lastEntryBeforeMonth ? lastEntryBeforeMonth.runningCash : 0;
-  const openingOnline = lastEntryBeforeMonth ? lastEntryBeforeMonth.runningOnline : 0;
+  const openingCash = lastEntryBeforeRange ? lastEntryBeforeRange.runningCash : 0;
+  const openingOnline = lastEntryBeforeRange ? lastEntryBeforeRange.runningOnline : 0;
   const openingTotal = openingCash + openingOnline;
 
-  // Filter entries for the selected month and year
-  const monthFilter = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+  // Filter entries for the selected period
+  const monthFilter = selectedMonth === 'all' ? `${selectedYear}` : `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
   const dashboardTransactions = [...entriesWithRunningBalance]
-    .filter(e => e.date.startsWith(monthFilter))
+    .filter(e => isAllTime || e.date.startsWith(monthFilter))
     .reverse();
 
-  // Current Month Summary (In-Month totals)
-  const currentMonthEntries = entriesWithRunningBalance.filter(e => e.date.startsWith(monthFilter));
-  const monthIncome = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0) + Number(e.onlineIncome || 0), 0);
-  const monthSpend = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
+  // Current Selection Summary
+  const filteredEntries = entriesWithRunningBalance.filter(e => isAllTime || e.date.startsWith(monthFilter));
   
-  const monthCashIncome = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0), 0);
-  const monthOnlineIncome = currentMonthEntries.reduce((acc, e) => acc + Number(e.onlineIncome || 0), 0);
-  const monthCashSpend = currentMonthEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0), 0);
-  const monthOnlineSpend = currentMonthEntries.reduce((acc, e) => acc + Number(e.onlineSpend || 0), 0);
+  // Detect if there's an explicit "Opening Balance" entry in the current filtered period
+  const periodOpeningEntries = filteredEntries.filter(e => 
+    e.remark?.toLowerCase().includes('opening balance')
+  );
+  
+  const periodOpeningCash = periodOpeningEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0), 0);
+  const periodOpeningOnline = periodOpeningEntries.reduce((acc, e) => acc + Number(e.onlineIncome || 0), 0);
 
-  // Closing Balance (Last entry of current month OR opening if no entries)
-  const lastEntryOfMonth = [...entriesWithRunningBalance]
-    .filter(e => e.date.startsWith(monthFilter))
-    .sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
-
-  const displayCashBalance = lastEntryOfMonth ? lastEntryOfMonth.runningCash : openingCash;
-  const displayOnlineBalance = lastEntryOfMonth ? lastEntryOfMonth.runningOnline : openingOnline;
+  const monthCashIncome = filteredEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0), 0);
+  const monthOnlineIncome = filteredEntries.reduce((acc, e) => acc + Number(e.onlineIncome || 0), 0);
+  const monthIncome = monthCashIncome + monthOnlineIncome;
+  const monthSpend = filteredEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
+  
+  // Closing Balance (Latest available balance in the range)
+  const lastEntryOfRange = [...filteredEntries].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
+  const displayCashBalance = lastEntryOfRange ? lastEntryOfRange.runningCash : (isAllTime ? (entriesWithRunningBalance[entriesWithRunningBalance.length-1]?.runningCash || 0) : openingCash);
+  const displayOnlineBalance = lastEntryOfRange ? lastEntryOfRange.runningOnline : (isAllTime ? (entriesWithRunningBalance[entriesWithRunningBalance.length-1]?.runningOnline || 0) : openingOnline);
   const displayTotalBalance = displayCashBalance + displayOnlineBalance;
+
+  // Opening Balance for the selection (Carry Forward + Current Period's Initial Opening Balance)
+  const displayOpeningCash = (isAllTime ? 0 : openingCash) + periodOpeningCash;
+  const displayOpeningOnline = (isAllTime ? 0 : openingOnline) + periodOpeningOnline;
+  const displayOpeningTotal = displayOpeningCash + displayOpeningOnline;
 
   const availableYears = [...new Set(entries.map(e => new Date(e.date).getFullYear()))];
   const currentYear = new Date().getFullYear();
@@ -110,51 +140,95 @@ const Dashboard = ({ entries, setEntries, setActiveTab }) => {
       )}
     </div>
   );
+  const CustomDropdown = ({ value, options, onChange, label, className }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    return (
+      <div className={cn("relative", className)}>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border whitespace-nowrap",
+            isOpen ? "bg-white border-primary text-primary shadow-lg" : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
+          )}
+        >
+          {options.find(o => o.value === value)?.label || label}
+        </button>
+        
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
+              <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                {options.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={cn(
+                      "w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-colors",
+                      value === opt.value ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
+    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-24">
       <header className="flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-          <div>
-            <h1 className="text-4xl font-black text-slate-800 tracking-tight">DaalRoti <span className="text-primary">Tracker</span></h1>
-            <p className="text-slate-400 font-bold text-sm uppercase mt-1">
-              {months[selectedMonth - 1]} {selectedYear} Overview
-            </p>
+        <div className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">DaalRoti <span className="text-primary">Tracker</span></h1>
+              <p className="text-slate-400 font-bold text-[10px] uppercase mt-0.5 tracking-wider">
+                Financial Overview
+              </p>
+            </div>
+            {syncStatus}
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 scroll-smooth">
-            {availableYears.map(year => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={cn(
-                  "px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                  selectedYear === year 
-                    ? "bg-slate-900 text-white shadow-lg scale-105" 
-                    : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
-                )}
-              >
-                {year}
-              </button>
-            ))}
+          
+          <div className="flex items-center gap-2">
+            {!isAllTime && (
+              <CustomDropdown 
+                value={selectedMonth}
+                options={[
+                  { label: 'All Months', value: 'all' },
+                  ...months
+                    .map((m, i) => ({ label: m, value: i + 1 }))
+                    .filter(m => selectedYear < new Date().getFullYear() || m.value <= new Date().getMonth() + 1)
+                    .reverse()
+                ]}
+                onChange={setSelectedMonth}
+                label="Month"
+              />
+            )}
+            <CustomDropdown 
+              value={isAllTime ? 'all' : selectedYear}
+              options={[
+                { label: 'All Time', value: 'all' },
+                ...availableYears.map(y => ({ label: String(y), value: y }))
+              ]}
+              onChange={(val) => {
+                if (val === 'all') {
+                  setIsAllTime(true);
+                } else {
+                  setIsAllTime(false);
+                  setSelectedYear(Number(val));
+                }
+              }}
+              label="Year"
+            />
           </div>
-        </div>
-
-        {/* Month Selector */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 scroll-smooth bg-slate-50 p-2 rounded-2xl border border-slate-100">
-          {months.map((month, idx) => (
-            <button
-              key={month}
-              onClick={() => setSelectedMonth(idx + 1)}
-              className={cn(
-                "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                selectedMonth === idx + 1 
-                  ? "bg-primary text-slate-900 shadow-md" 
-                  : "text-slate-400 hover:text-slate-600"
-              )}
-            >
-              {month}
-            </button>
-          ))}
         </div>
       </header>
 
@@ -231,16 +305,16 @@ const Dashboard = ({ entries, setEntries, setActiveTab }) => {
                   </div>
                 </div>
                 
-                <div className="flex gap-6">
-                   <div className="text-right border-r border-white/10 pr-6">
-                     <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Cash In Hand</p>
-                     <p className="text-lg font-black text-primary leading-none">{formatCurrency(openingCash)}</p>
-                   </div>
-                   <div className="text-right">
-                     <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Online/Bank</p>
-                     <p className="text-lg font-black text-income leading-none">{formatCurrency(openingOnline)}</p>
-                   </div>
-                </div>
+                 <div className="flex gap-6">
+                    <div className="text-right border-r border-white/10 pr-6">
+                      <p className="text-[10px] font-bold text-white/30 uppercase mb-1 whitespace-nowrap">Cash In Hand</p>
+                      <p className="text-lg font-black text-primary leading-none">{formatCurrency(displayOpeningCash)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-white/30 uppercase mb-1 whitespace-nowrap">Online/Bank</p>
+                      <p className="text-lg font-black text-income leading-none">{formatCurrency(displayOpeningOnline)}</p>
+                    </div>
+                 </div>
               </div>
             </div>
 
@@ -256,7 +330,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab }) => {
                 return (
                   <div 
                     key={entry.id} 
-                    onClick={() => setActiveTab('reports')}
+                    onClick={() => onEntryClick(entry.id)}
                     className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 transition-all hover:scale-[1.01] cursor-pointer active:scale-95 group"
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

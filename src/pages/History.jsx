@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet } from 'lucide-react';
 import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
 
-const History = ({ entries, onDelete, onEdit }) => {
+const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlightedEntryId, syncStatus }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const currentMonthStr = new Date().toISOString().slice(0, 7);
   const [filterMonth, setFilterMonth] = useState(currentMonthStr);
@@ -39,8 +39,38 @@ const History = ({ entries, onDelete, onEdit }) => {
   }).reverse();
 
   const filteredEntries = entriesWithBalance.filter(entry => {
-    const matchesSearch = (entry.remark || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         entry.date.includes(searchTerm);
+    const s = searchTerm.toLowerCase();
+    const normalizedS = s.replace(/[/.]/g, '-');
+    
+    const matchesRemark = (entry.remark || '').toLowerCase().includes(s);
+    
+    // Flexible Date Matching
+    const entryDateObj = new Date(entry.date + 'T00:00:00');
+    const dd = String(entryDateObj.getDate());
+    const mm = String(entryDateObj.getMonth() + 1);
+    const yyyy = String(entryDateObj.getFullYear());
+    const yy = yyyy.slice(-2);
+    const dmy = `${dd}-${mm}-${yyyy}`;
+    const dmy_short = `${dd}-${mm}-${yy}`;
+    const dm = `${dd}-${mm}`;
+
+    const matchesDate = entry.date.includes(s) || 
+                       formatDate(entry.date).toLowerCase().includes(s) ||
+                       dmy.includes(normalizedS) ||
+                       dmy_short.includes(normalizedS) ||
+                       dm === normalizedS;
+    
+    // Check if searchTerm matches any amount field
+    const cashIn = String(entry.cashIncome || '');
+    const onlineIn = String(entry.onlineIncome || '');
+    const cashOut = String(entry.cashSpend || '');
+    const onlineOut = String(entry.onlineSpend || '');
+    const totalIn = String(Number(entry.cashIncome || 0) + Number(entry.onlineIncome || 0));
+    const totalOut = String(Number(entry.cashSpend || 0) + Number(entry.onlineSpend || 0));
+    
+    const matchesAmount = cashIn.includes(s) || onlineIn.includes(s) || cashOut.includes(s) || onlineOut.includes(s) || totalIn.includes(s) || totalOut.includes(s);
+
+    const matchesSearch = matchesRemark || matchesDate || matchesAmount;
     const matchesMonth = filterMonth ? entry.date.startsWith(filterMonth) : true;
     
     const isIncome = (entry.cashDelta > 0 || entry.onlineDelta > 0);
@@ -98,6 +128,34 @@ const History = ({ entries, onDelete, onEdit }) => {
   const periodCashSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0), 0));
   const periodOnlineSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
   
+  // Auto-scroll and highlight logic
+  useEffect(() => {
+    if (highlightedEntryId) {
+      const entry = entries.find(e => e.id === highlightedEntryId);
+      if (entry) {
+        // Change month filter if needed
+        const entryMonth = entry.date.slice(0, 7);
+        if (entryMonth !== filterMonth) {
+          setFilterMonth(entryMonth);
+        }
+        
+        // Use a small timeout to ensure DOM is updated after potential filter change
+        const timer = setTimeout(() => {
+          const element = document.getElementById(`entry-${highlightedEntryId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Clear highlight after 3 seconds
+            const clearTimer = setTimeout(() => {
+              setHighlightedEntryId(null);
+            }, 3000);
+            return () => clearTimeout(clearTimer);
+          }
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [highlightedEntryId, entries, filterMonth, setHighlightedEntryId]);
   // Latest running balances for the filtered period
   const latestEntry = filteredEntries[0]; 
   const currentCashBal = latestEntry ? latestEntry.runningCash : 0;
@@ -153,17 +211,19 @@ const History = ({ entries, onDelete, onEdit }) => {
   );
 
   return (
-    <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
-      <header className="flex flex-col gap-2">
-        <div className="flex justify-between items-end">
+    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-24">
+      <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-4xl font-black text-slate-800 tracking-tight">Reports</h1>
-            <p className="text-slate-400 font-bold text-sm uppercase mt-1">Financial Analysis</p>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Financial Ledger</h1>
+            <p className="text-slate-400 font-bold text-[10px] uppercase mt-0.5 tracking-wider">Reports & Analysis</p>
           </div>
-          <div className="bg-white px-5 py-3 rounded-2xl shadow-premium border border-slate-100 flex items-center gap-3">
-             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-             <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{filteredEntries.length} Transactions</span>
-          </div>
+          {syncStatus}
+        </div>
+        
+        <div className="bg-slate-50/50 px-5 py-3 rounded-2xl border border-slate-100 flex items-center gap-3">
+           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{filteredEntries.length} Transactions</span>
         </div>
       </header>
 
@@ -328,10 +388,15 @@ const History = ({ entries, onDelete, onEdit }) => {
               const isTuesday = new Date(entry.date + 'T00:00:00').getDay() === 2;
 
               return (
-                <div key={entry.id} className={cn(
-                  "px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all",
-                  entry.isVirtual ? "bg-slate-50/50 border-slate-100 opacity-60" : "bg-white border-slate-50 group hover:border-primary/20"
-                )}>
+                <div 
+                  key={entry.id} 
+                  id={`entry-${entry.id}`}
+                  className={cn(
+                    "px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all duration-700",
+                    entry.isVirtual ? "bg-slate-50/50 border-slate-100 opacity-60" : "bg-white border-slate-50 group hover:border-primary/40 hover:bg-slate-50 hover:shadow-md hover:scale-[1.01] cursor-default",
+                    highlightedEntryId === entry.id && "bg-amber-50 border-amber-200 ring-2 ring-primary/20 scale-[1.02] shadow-2xl z-10"
+                  )}
+                >
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                     
                     {/* Date & Icon */}

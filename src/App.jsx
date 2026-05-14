@@ -8,6 +8,7 @@ import CustomAlert from './components/CustomAlert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getSyncUrl, setSyncUrl, fetchFromSheet, syncToSheet } from './lib/googleSheets';
 import { Settings, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { cn } from './lib/utils';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -21,6 +22,7 @@ function App() {
   const [syncUrlInput, setSyncUrlInput] = useState(getSyncUrl() || '');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState(localStorage.getItem('dr_last_sync') || 'Never');
+  const [highlightedEntryId, setHighlightedEntryId] = useState(null);
 
   const handleTabChange = (tabId) => {
     if (tabId !== 'add') {
@@ -119,37 +121,52 @@ function App() {
     handleFetch(); // Initial fetch
   };
 
+  const SyncStatus = ({ compact }) => (
+    <div className={cn(
+      "px-3 py-1.5 rounded-xl border flex items-center gap-2 transition-all backdrop-blur-md self-center",
+      isSyncing ? 'bg-primary/20 border-primary/30' : 'bg-slate-50/50 border-slate-100',
+      compact ? "px-2 py-1" : ""
+    )}>
+      {isSyncing ? (
+        <RefreshCw size={12} className="text-primary animate-spin" />
+      ) : getSyncUrl() ? (
+        <Cloud size={12} className="text-income" />
+      ) : (
+        <CloudOff size={12} className="text-slate-300" />
+      )}
+      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">
+        {isSyncing ? 'Syncing...' : lastSynced}
+      </span>
+    </div>
+  );
+
   const renderScreen = () => {
+    const commonProps = { syncStatus: <SyncStatus /> };
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard entries={entries} setEntries={setEntries} setActiveTab={setActiveTab} />;
-      case 'analytics':
-        return <Analytics entries={entries} />;
+        return <Dashboard entries={entries} setEntries={setEntries} setActiveTab={handleTabChange} onEntryClick={(id) => { setHighlightedEntryId(id); handleTabChange('reports'); }} {...commonProps} />;
       case 'add':
-        return <AddEntry entries={entries} onSave={addEntry} editData={editingEntry} onCancel={() => { setEditingEntry(null); setActiveTab('reports'); }} />;
+        return <AddEntry entries={entries} setEntries={setEntries} editingEntry={editingEntry} onComplete={() => handleTabChange('dashboard')} />;
       case 'reports':
-        return <History entries={entries} onDelete={deleteEntry} onEdit={handleEdit} />;
+        return <History 
+          entries={entries} 
+          onDelete={deleteEntry} 
+          onEdit={(entry) => { setEditingEntry(entry); handleTabChange('add'); }} 
+          highlightedEntryId={highlightedEntryId} 
+          setHighlightedEntryId={setHighlightedEntryId} 
+          {...commonProps} 
+        />;
+      case 'analytics':
+        return <Analytics entries={entries} {...commonProps} />;
       default:
-        return <Dashboard entries={entries} />;
+        return <Dashboard entries={entries} setEntries={setEntries} setActiveTab={handleTabChange} onEntryClick={(id) => { setHighlightedEntryId(id); handleTabChange('reports'); }} {...commonProps} />;
     }
   };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
       {/* Top Header Controls */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-         <div className={`px-4 py-2 rounded-2xl border flex items-center gap-2 transition-all backdrop-blur-md ${isSyncing ? 'bg-primary/20 border-primary/30' : 'bg-white/80 border-slate-100'}`}>
-            {isSyncing ? (
-              <RefreshCw size={14} className="text-primary animate-spin" />
-            ) : getSyncUrl() ? (
-              <Cloud size={14} className="text-income" />
-            ) : (
-              <CloudOff size={14} className="text-slate-300" />
-            )}
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-              {isSyncing ? 'Syncing...' : `Last: ${lastSynced}`}
-            </span>
-         </div>
+      <div className="fixed top-4 right-4 z-50">
          <button 
            onClick={() => setShowSettings(true)}
            className="p-3 bg-white/80 backdrop-blur-md border border-slate-100 rounded-2xl text-slate-400 hover:text-primary transition-all shadow-sm"

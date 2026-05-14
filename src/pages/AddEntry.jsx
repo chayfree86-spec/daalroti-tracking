@@ -149,52 +149,50 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   };
 
   return (
-    <div className="container mx-auto p-6 pt-12 space-y-8 max-w-5xl pb-24">
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-             <h1 className="text-4xl font-black text-slate-800 tracking-tight">{editData ? 'Edit Entry' : 'Add Entry'}</h1>
-             {editData && (
-                <button 
-                  onClick={onCancel}
-                  className="bg-slate-100 text-slate-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
-                >
-                  Cancel
-                </button>
-             )}
+    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-24">
+      <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">{editData ? 'Edit Entry' : 'Add Entry'}</h1>
+            <p className="text-slate-400 font-bold text-[10px] uppercase mt-0.5 tracking-wider">Daily Revenue Tracking</p>
           </div>
-          <p className="text-slate-400 font-bold text-sm uppercase">Daily Revenue Tracking</p>
+          {editData && (
+             <button 
+               onClick={onCancel}
+               className="bg-slate-100 text-slate-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
+             >
+               Cancel
+             </button>
+          )}
         </div>
 
-        <div className="space-y-2 min-w-[200px] flex flex-col items-end">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 justify-end">
-            Entry Date
-            <Calendar size={12} className="text-primary" />
-          </label>
-          
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => changeDate(-1)}
-              className="w-10 h-[50px] rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-premium"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => setShowCalendar(true)}
-              className="px-6 h-[50px] rounded-2xl bg-white border-2 border-slate-100 flex justify-end items-center gap-4 hover:border-primary/30 transition-all font-bold text-slate-700 shadow-premium min-w-[160px]"
-            >
-              <span>{formatDate(formData.date)}</span>
-              <Calendar size={18} className="text-primary/40" />
-            </button>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entry Date</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => changeDate(-1)}
+                className="w-10 h-[50px] rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-all"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setShowCalendar(true)}
+                className="px-6 h-[50px] rounded-2xl bg-slate-50 border border-slate-100 flex justify-between items-center gap-4 hover:border-primary/30 transition-all font-bold text-slate-700 min-w-[160px]"
+              >
+                <span className="text-sm">{formatDate(formData.date)}</span>
+                <Calendar size={18} className="text-primary/40" />
+              </button>
 
-            <button 
-              onClick={() => changeDate(1)}
-              className="w-10 h-[50px] rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-premium"
-            >
-              <ChevronRight size={18} />
-            </button>
+              <button 
+                onClick={() => changeDate(1)}
+                className="w-10 h-[50px] rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-all"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -224,6 +222,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                   onChange={handleChange}
                   onFocus={(e) => e.target.select()}
                   onKeyDown={(e) => handleKeyDown(e, onlineIncomeRef)}
+                  onWheel={(e) => e.target.blur()}
                   placeholder="0"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
@@ -241,6 +240,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                   onChange={handleChange}
                   onFocus={(e) => e.target.select()}
                   onKeyDown={(e) => handleKeyDown(e, incomeRemarkRef)}
+                  onWheel={(e) => e.target.blur()}
                   placeholder="0"
                   className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                 />
@@ -326,6 +326,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
                     onKeyDown={(e) => handleKeyDown(e, onlineSpendRef)}
+                    onWheel={(e) => e.target.blur()}
                     placeholder="0"
                     className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
@@ -343,6 +344,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
                     onKeyDown={(e) => handleKeyDown(e, spendRemarkRef)}
+                    onWheel={(e) => e.target.blur()}
                     placeholder="0"
                     className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[60px]"
                   />
