@@ -13,19 +13,8 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
     return a.id - b.id;
   }) : [];
 
-  if (!entries || entries.length === 0) {
-    return (
-      <div className="container mx-auto p-6 pt-12 text-center h-[80vh] flex flex-col items-center justify-center space-y-6">
-        <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
-          <Landmark size={48} />
-        </div>
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">No Data Available</h2>
-          <p className="text-slate-400 font-bold mt-2 uppercase text-[10px] tracking-widest">Connect to Google Sheets or add an entry</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove the early return to show dashboard design even when empty
+  // if (!entries || entries.length === 0) { ... }
 
   // Calculate Running Balances for ALL entries
   let runningCash = 0;

@@ -61,7 +61,13 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
     if (e.key === 'Enter') {
       if (activeSuggestionField) return;
       e.preventDefault();
-      nextRef.current?.focus();
+      
+      // If it's a button, click it. Otherwise focus.
+      if (nextRef.current?.tagName === 'BUTTON') {
+        nextRef.current.click();
+      } else {
+        nextRef.current?.focus();
+      }
     }
   };
 
@@ -100,13 +106,6 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineIncome: '', 
       incomeRemark: 'Income' 
     }));
-    
-    setAlert({
-        show: true,
-        type: 'success',
-        title: 'Income Saved!',
-        message: `Income entry for ${formatDate(formData.date)} recorded.`
-    });
   };
 
   const handleSaveSpend = (e) => {
@@ -139,17 +138,10 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: '', 
       spendRemark: 'Spend' 
     }));
-
-    setAlert({
-        show: true,
-        type: 'success',
-        title: editData ? 'Spend Updated!' : 'Spend Saved!',
-        message: `Spend entry for ${formatDate(formData.date)} recorded.`
-    });
   };
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-24">
+    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl pb-12">
       <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
         <div className="flex items-center gap-4">
           <div>
@@ -198,7 +190,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
-        <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+        <form onSubmit={handleSaveIncome} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-income/10 text-income flex items-center justify-center">
@@ -280,6 +272,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                     {uniqueRemarks.filter(r => r.toLowerCase().includes(formData.incomeRemark.toLowerCase())).slice(0, 5).map((rem, i) => (
                       <button
                         key={i}
+                        type="button"
                         onClick={() => selectSuggestion('incomeRemark', rem)}
                         className="w-full text-left px-6 py-4 hover:bg-slate-50 font-bold text-slate-600 text-sm border-b border-slate-50 last:border-0 transition-colors"
                       >
@@ -294,15 +287,15 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
 
           <button
             ref={incomeSubmitRef}
-            onClick={handleSaveIncome}
+            type="submit"
             className="w-full h-16 bg-income text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-income/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
           >
             <Save size={18} />
             {editData ? 'Update Income' : 'Save Income'}
           </button>
-        </div>
+        </form>
 
-        <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+        <form onSubmit={handleSaveSpend} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-spend/10 text-spend flex items-center justify-center">
@@ -384,6 +377,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                       {uniqueRemarks.filter(r => r.toLowerCase().includes(formData.spendRemark.toLowerCase())).slice(0, 5).map((rem, i) => (
                         <button
                           key={i}
+                          type="button"
                           onClick={() => selectSuggestion('spendRemark', rem)}
                           className="w-full text-left px-6 py-4 hover:bg-slate-50 font-bold text-slate-600 text-sm border-b border-slate-50 last:border-0 transition-colors"
                         >
@@ -399,13 +393,13 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
 
           <button
             ref={spendSubmitRef}
-            onClick={handleSaveSpend}
+            type="submit"
             className="mt-8 w-full h-[70px] rounded-3xl bg-spend text-white font-black text-lg shadow-xl shadow-spend/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:brightness-110"
           >
-            <Save size={24} className="rotate-180" />
+            <Save size={20} className="rotate-180" />
             {editData ? 'Update Spend' : 'Save Spend'}
           </button>
-        </div>
+        </form>
       </div>
 
       {showCalendar && (

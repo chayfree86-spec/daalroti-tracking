@@ -13,7 +13,19 @@ const Analytics = ({ entries, syncStatus }) => {
 
   // Data Processing
   const stats = useMemo(() => {
-    if (!entries.length) return null;
+    if (!entries.length) return {
+      monthlyData: [], 
+      dailyData: [],
+      totalIncome: 0, 
+      totalSpend: 0, 
+      cashBalance: 0, 
+      onlineBalance: 0,
+      topCategories: [],
+      maxIncomeDay: { date: '', amount: 0 },
+      maxSpendDay: { date: '', amount: 0 },
+      highValueEntries: [],
+      totalEntries: 0
+    };
 
     const monthMap = {};
     const categoryMap = {};
@@ -114,19 +126,7 @@ const Analytics = ({ entries, syncStatus }) => {
     };
   }, [entries, selectedMonth, selectedYear, isAllTime]);
 
-  if (!stats) {
-    return (
-      <div className="container mx-auto p-6 pt-12 text-center h-[80vh] flex flex-col items-center justify-center space-y-6">
-        <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
-          <Activity size={48} />
-        </div>
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">No Data Yet</h2>
-          <p className="text-slate-400 font-bold mt-2">Add some transactions to see analytics</p>
-        </div>
-      </div>
-    );
-  }
+
 
   const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
 
@@ -270,7 +270,7 @@ const Analytics = ({ entries, syncStatus }) => {
       </div>
 
       {/* Daily Activity Chart - Detailed Month View */}
-      {!isAllTime && stats.dailyData.length > 0 && (
+      {!isAllTime && (
         <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 space-y-8">
            <div className="flex items-center justify-between">
             <div className="space-y-1">

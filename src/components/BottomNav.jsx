@@ -1,4 +1,3 @@
-import React from 'react';
 import { LayoutDashboard, PlusCircle, BarChart3, Activity } from 'lucide-react';
 import { cn } from '../lib/utils';
 

@@ -14,8 +14,14 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [editingEntry, setEditingEntry] = useState(null);
   const [entries, setEntries] = useState(() => {
-    const saved = localStorage.getItem('dr_entries');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('dr_entries');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error("Failed to parse entries from localStorage", e);
+      return [];
+    }
   });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
   const [showSettings, setShowSettings] = useState(false);
@@ -23,6 +29,7 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState(localStorage.getItem('dr_last_sync') || 'Never');
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
+  const [appAlert, setAppAlert] = useState({ show: false, type: 'success', title: '', message: '' });
 
   const handleTabChange = (tabId) => {
     if (tabId !== 'add') {
@@ -92,13 +99,13 @@ function App() {
   }, [entries, handleSync]);
 
   const addEntry = (entry) => {
-    if (editingEntry) {
-      setEntries(entries.map(e => e.id === editingEntry.id ? { ...entry, id: editingEntry.id } : e));
-      setEditingEntry(null);
-    } else {
-      setEntries([entry, ...entries]);
-    }
-    // Removed automatic redirect to keep user on the same page for continuous entry
+    setEntries(prevEntries => {
+      if (editingEntry) {
+        return prevEntries.map(e => e.id === editingEntry.id ? { ...entry, id: editingEntry.id } : e);
+      }
+      return [entry, ...prevEntries];
+    });
+    if (editingEntry) setEditingEntry(null);
   };
 
   const deleteEntry = (id) => {
@@ -146,12 +153,36 @@ function App() {
       case 'dashboard':
         return <Dashboard entries={entries} setEntries={setEntries} setActiveTab={handleTabChange} onEntryClick={(id) => { setHighlightedEntryId(id); handleTabChange('reports'); }} {...commonProps} />;
       case 'add':
-        return <AddEntry entries={entries} setEntries={setEntries} editingEntry={editingEntry} onComplete={() => handleTabChange('dashboard')} />;
+        return <AddEntry 
+          entries={entries} 
+          editData={editingEntry} 
+          onSave={(entry) => {
+            addEntry(entry);
+            setAppAlert({
+              show: true,
+              type: 'success',
+              title: entry.cashIncome || entry.onlineIncome ? 'Income Saved!' : 'Spend Saved!',
+              message: 'Transaction has been recorded successfully.'
+            });
+            setTimeout(() => handleTabChange('dashboard'), 100);
+          }} 
+          onCancel={() => {
+            setEditingEntry(null);
+            setTimeout(() => handleTabChange('dashboard'), 100);
+          }}
+        />;
       case 'reports':
         return <History 
           entries={entries} 
           onDelete={deleteEntry} 
-          onEdit={(entry) => { setEditingEntry(entry); handleTabChange('add'); }} 
+          onSave={(entry) => {
+            addEntry(entry);
+            setTimeout(() => handleTabChange('dashboard'), 100);
+          }} 
+          onCancel={() => {
+            setEditingEntry(null);
+            setTimeout(() => handleTabChange('dashboard'), 100);
+          }} 
           highlightedEntryId={highlightedEntryId} 
           setHighlightedEntryId={setHighlightedEntryId} 
           {...commonProps} 
@@ -164,16 +195,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
-      {/* Top Header Controls */}
-      <div className="fixed top-4 right-4 z-50">
-         <button 
-           onClick={() => setShowSettings(true)}
-           className="p-3 bg-white/80 backdrop-blur-md border border-slate-100 rounded-2xl text-slate-400 hover:text-primary transition-all shadow-sm"
-         >
-           <Settings size={18} />
-         </button>
-      </div>
+    <div className={cn("min-h-screen bg-background transition-all duration-300", 
+      activeTab === 'dashboard' ? "pb-32" : "pb-24"
+    )}>
+
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -187,7 +212,43 @@ function App() {
         </motion.div>
       </AnimatePresence>
 
-      <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
+      {/* Page Footer - Show ONLY on Dashboard */}
+      {activeTab === 'dashboard' && (
+        <footer className="container mx-auto px-6 py-8 border-t border-slate-100 mt-6 mb-24">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-xl shadow-lg">
+                DR
+              </div>
+              <div>
+                <h4 className="text-slate-800 font-black text-lg tracking-tight">DaalRoti Tracker</h4>
+                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Premium Expense Management</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
+              >
+                <Settings size={14} />
+                Sync Settings
+              </button>
+              <div className="text-slate-300 font-black text-[10px] uppercase tracking-widest">
+                v2.4.0
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-slate-300 font-bold text-[10px] uppercase tracking-widest mt-12">
+            Designed for Clarity & Efficiency
+          </p>
+        </footer>
+      )}
+
+      <BottomNav 
+        activeTab={activeTab} 
+        setActiveTab={handleTabChange} 
+      />
 
       {/* Settings Modal */}
       <AnimatePresence>
@@ -250,11 +311,28 @@ function App() {
       </AnimatePresence>
 
       <CustomAlert 
+        show={appAlert.show}
+        type={appAlert.type}
+        title={appAlert.title}
+        message={appAlert.message}
+        onConfirm={() => setAppAlert({ ...appAlert, show: false })}
+      />
+
+      <CustomAlert 
         show={deleteConfirm.show}
         type="error"
         title="Delete Entry?"
         message="This action cannot be undone. Do you want to continue?"
-        onConfirm={confirmDelete}
+        onConfirm={() => {
+          setEntries(entries.filter(e => e.id !== deleteConfirm.id));
+          setDeleteConfirm({ show: false, id: null });
+          setAppAlert({
+            show: true,
+            type: 'success',
+            title: 'Deleted!',
+            message: 'Entry has been removed successfully.'
+          });
+        }}
         onCancel={() => setDeleteConfirm({ show: false, id: null })}
       />
     </div>
