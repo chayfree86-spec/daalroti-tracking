@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.png', 'favicon-32x32.png', 'favicon-48x48.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'DaalRoti Tracker',
         short_name: 'DaalRoti',

@@ -49,3 +49,7 @@ export function numberToWords(num) {
 
   return make(Math.abs(num)) + ' Only';
 }
+export function toTitleCase(str) {
+  if (!str) return '';
+  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}

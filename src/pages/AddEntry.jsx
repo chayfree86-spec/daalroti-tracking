@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn, formatDate } from '../lib/utils';
+import { cn, formatDate, toTitleCase } from '../lib/utils';
 import CustomCalendar from '../components/CustomCalendar';
 import CustomAlert from '../components/CustomAlert';
 
@@ -104,7 +104,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineIncome: formData.onlineIncome,
       cashSpend: '',
       onlineSpend: '',
-      remark: formData.incomeRemark.trim() || 'Income',
+      remark: toTitleCase(formData.incomeRemark.trim()) || 'Income',
       id: Date.now(),
       timestamp: new Date().toISOString(),
     };
@@ -136,7 +136,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineIncome: '',
       cashSpend: formData.cashSpend,
       onlineSpend: formData.onlineSpend,
-      remark: formData.spendRemark.trim() || 'Spend',
+      remark: toTitleCase(formData.spendRemark.trim()) || 'Spend',
       id: Date.now(),
       timestamp: new Date().toISOString(),
     };
