@@ -1,7 +1,6 @@
 const SYNC_URL_KEY = 'dr_sync_url';
-const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbx1YQ6TljbRRxO_XBsXxXAlpMz7Kz3fBIJRsFcSMQeLwtVxXxs9SOtOgB-s7S6m8wdq/exec';
 
-export const getSyncUrl = () => localStorage.getItem(SYNC_URL_KEY) || DEFAULT_SYNC_URL;
+export const getSyncUrl = () => localStorage.getItem(SYNC_URL_KEY) || '';
 export const setSyncUrl = (url) => localStorage.setItem(SYNC_URL_KEY, url);
 
 export const fetchFromSheet = async () => {

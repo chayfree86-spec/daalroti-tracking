@@ -31,6 +31,7 @@ function App() {
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
   const [appAlert, setAppAlert] = useState({ show: false, type: 'success', title: '', message: '' });
   const skipAutoSync = useRef(false);
+  const hasFetchedThisSession = useRef(false); // CRITICAL: Block sync until first fetch
 
   const handleTabChange = (tabId) => {
     // Always clear editing state when navigating via tabs, 
@@ -41,9 +42,14 @@ function App() {
     setActiveTab(tabId);
   };
 
-  // Sync Logic
+  // Sync Logic — ONLY allowed after first fetch from sheet
   const handleSync = useCallback(async (dataToSync = entries) => {
     if (!getSyncUrl() || dataToSync.length === 0) return;
+    
+    // SAFEGUARD: Never push to sheet if we haven't fetched first this session
+    // This prevents stale/empty localStorage from overwriting real sheet data
+    if (!hasFetchedThisSession.current) return;
+    
     setIsSyncing(true);
 
     // Calculate Running Balances before syncing so they appear in the Sheet
@@ -88,6 +94,7 @@ function App() {
       localStorage.setItem('dr_last_sync', now);
     } catch (error) {
       console.error('Sync failed');
+      setAppAlert({ show: true, type: 'error', title: 'Sync Failed!', message: 'Data sync mein problem aayi. Please check internet connection.' });
     } finally {
       setIsSyncing(false);
     }
@@ -103,12 +110,22 @@ function App() {
         skipAutoSync.current = true; // Don't auto-sync fetched data back
         setEntries(normalized);
       }
+      // Mark session as fetched — sync is now safe
+      hasFetchedThisSession.current = true;
     } catch (error) {
       console.error('Fetch failed');
+      setAppAlert({ show: true, type: 'error', title: 'Fetch Failed!', message: 'Google Sheet se data nahi aa paaya. URL check karein.' });
     } finally {
       setIsSyncing(false);
     }
   };
+
+  // Auto-fetch from sheet on app mount (if URL is configured)
+  useEffect(() => {
+    if (getSyncUrl()) {
+      handleFetch();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     localStorage.setItem('dr_entries', JSON.stringify(entries));

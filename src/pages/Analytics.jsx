@@ -274,7 +274,7 @@ const Analytics = ({ entries, syncStatus }) => {
         <div className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 space-y-8">
            <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Daily Activity - {months[selectedMonth-1]}</h3>
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Daily Activity - {selectedMonth === 'all' ? 'All Months' : months[selectedMonth-1]}</h3>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Din-ba-din ka kharcha aur kamai</p>
             </div>
           </div>

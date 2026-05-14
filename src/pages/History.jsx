@@ -22,8 +22,12 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
     const onlineDelta = (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
     
     // Use sheet values if available (from sync), otherwise calculate locally
-    const currentEntryCashBal = entry.cashBalance !== undefined ? Number(entry.cashBalance) : (runningCash + cashDelta);
-    const currentEntryOnlineBal = entry.onlineBalance !== undefined ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
+    // Important: check for empty string or null/undefined
+    const hasCashBal = entry.cashBalance !== undefined && entry.cashBalance !== "" && entry.cashBalance !== null;
+    const hasOnlineBal = entry.onlineBalance !== undefined && entry.onlineBalance !== "" && entry.onlineBalance !== null;
+
+    const currentEntryCashBal = hasCashBal ? Number(entry.cashBalance) : (runningCash + cashDelta);
+    const currentEntryOnlineBal = hasOnlineBal ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
 
     runningCash = currentEntryCashBal;
     runningOnline = currentEntryOnlineBal;
@@ -163,7 +167,7 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   const netBalance = currentCashBal + currentOnlineBal;
 
   // Generate dynamic month list from entries
-  const availableMonths = [...new Set(entries.map(e => e.date.substring(0, 7)))].sort().reverse();
+  const availableMonths = [...new Set(entries.filter(e => e.date).map(e => String(e.date).substring(0, 7)))].sort().reverse();
 
   const SummaryCard = ({ title, amount, icon: Icon, gradient, subtitle, light, hideWords, footer }) => (
     <div className={cn(
