@@ -8,7 +8,7 @@ import CustomAlert from './components/CustomAlert';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getSyncUrl, setSyncUrl, fetchFromSheet, syncToSheet } from './lib/googleSheets';
 import { Settings, Cloud, CloudOff, RefreshCw } from 'lucide-react';
-import { cn } from './lib/utils';
+import { cn, normalizeEntry } from './lib/utils';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -18,7 +18,7 @@ function App() {
     try {
       const saved = localStorage.getItem('dr_entries');
       let parsed = saved ? JSON.parse(saved) : [];
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map(normalizeEntry) : [];
     } catch (e) {
       return [];
     }
@@ -54,8 +54,8 @@ function App() {
     let runningCash = 0;
     let runningOnline = 0;
     const enrichedData = sortedForSync.map(entry => {
-      runningCash += (Number(entry.cashIncome || entry.cashincome || 0) - Number(entry.cashSpend || entry.cashspend || 0));
-      runningOnline += (Number(entry.onlineIncome || entry.onlineincome || 0) - Number(entry.onlineSpend || entry.onlinespend || 0));
+      runningCash += (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
+      runningOnline += (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
       
       const rawEntry = {
         ...entry,
@@ -90,14 +90,7 @@ function App() {
     try {
       const data = await fetchFromSheet();
       if (data && Array.isArray(data)) {
-        const normalized = data.map(item => {
-          const newItem = {};
-          Object.keys(item).forEach(key => {
-            const normalizedKey = key.toLowerCase();
-            newItem[normalizedKey] = item[key];
-          });
-          return newItem;
-        });
+        const normalized = data.map(normalizeEntry);
         setEntries(normalized);
       }
     } catch (error) {

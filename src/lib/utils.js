@@ -75,3 +75,38 @@ export function toTitleCase(str) {
   if (!str) return '';
   return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
+
+/**
+ * Normalize an entry object so all keys are in consistent camelCase.
+ * Handles data coming from Google Sheets (lowercase) or localStorage (camelCase).
+ */
+export function normalizeEntry(raw) {
+  if (!raw || typeof raw !== 'object') return raw;
+
+  // Map of lowercase -> camelCase for known fields
+  const keyMap = {
+    cashincome: 'cashIncome',
+    onlineincome: 'onlineIncome',
+    cashspend: 'cashSpend',
+    onlinespend: 'onlineSpend',
+    cashbalance: 'cashBalance',
+    onlinebalance: 'onlineBalance',
+    totalbalance: 'totalBalance',
+  };
+
+  const entry = {};
+  Object.keys(raw).forEach(key => {
+    const normalizedKey = keyMap[key.toLowerCase()] || key;
+    // Avoid duplicate keys — camelCase version takes priority
+    if (!entry.hasOwnProperty(normalizedKey)) {
+      entry[normalizedKey] = raw[key];
+    }
+  });
+
+  // Ensure id is a number for consistent sorting
+  if (entry.id !== undefined) {
+    entry.id = Number(entry.id) || entry.id;
+  }
+
+  return entry;
+}

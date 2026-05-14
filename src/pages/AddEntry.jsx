@@ -106,7 +106,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: '',
       remark: toTitleCase(formData.incomeRemark.trim()) || 'Income',
       id: Date.now(),
-      timestamp: Date.now(),
+      timestamp: new Date().toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
     };
     onSave(entry);
     
@@ -138,7 +138,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: formData.onlineSpend,
       remark: toTitleCase(formData.spendRemark.trim()) || 'Spend',
       id: Date.now(),
-      timestamp: Date.now(),
+      timestamp: new Date().toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
     };
     onSave(entry);
     
