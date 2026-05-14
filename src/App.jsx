@@ -17,10 +17,9 @@ function App() {
   const [entries, setEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('dr_entries');
-      const parsed = saved ? JSON.parse(saved) : [];
+      let parsed = saved ? JSON.parse(saved) : [];
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.error("Failed to parse entries from localStorage", e);
       return [];
     }
   });
