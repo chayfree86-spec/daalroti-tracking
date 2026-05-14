@@ -31,23 +31,6 @@ function App() {
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
   const [appAlert, setAppAlert] = useState({ show: false, type: 'success', title: '', message: '' });
 
-  // One-time cleanup for mistakenly added spend data
-  useEffect(() => {
-    const hasWrongSpend = entries.some(e => ['100002', '100003', '100006', '100007'].includes(String(e.id)) && e.cashSpend !== '0');
-    if (hasWrongSpend) {
-      setEntries(prev => prev.map(e => {
-        if (['100002', '100003', '100006', '100007'].includes(String(e.id))) {
-          return { 
-            ...e, 
-            cashSpend: '0', 
-            remark: e.remark.includes(' | ') ? e.remark.split(' | ')[0] : e.remark 
-          };
-        }
-        return e;
-      }));
-    }
-  }, [entries]);
-
   const handleTabChange = (tabId) => {
     // Always clear editing state when navigating via tabs, 
     // unless it's the 'add' tab and we are intentionally editing (which is handled by handleEdit)
