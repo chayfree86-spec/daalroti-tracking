@@ -16,19 +16,23 @@ export function formatCurrency(amount) {
 export function formatDate(dateStr) {
   if (!dateStr) return 'N/A';
   try {
-    // Handle YYYY-MM-DD or DD-MM-YYYY
     let parsedDate;
-    if (dateStr.includes('-')) {
-      const parts = dateStr.split('-');
+    const str = String(dateStr).trim();
+
+    // Full ISO string like "2026-04-30T18:30:00.000Z"
+    if (str.includes('T')) {
+      parsedDate = new Date(str);
+    } else if (str.includes('-')) {
+      const parts = str.split('-');
       if (parts[0].length === 4) {
         // YYYY-MM-DD
-        parsedDate = new Date(dateStr + 'T00:00:00');
+        parsedDate = new Date(str + 'T00:00:00');
       } else {
         // DD-MM-YYYY
         parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
       }
     } else {
-      parsedDate = new Date(dateStr);
+      parsedDate = new Date(str);
     }
 
     if (isNaN(parsedDate.getTime())) return 'Invalid Date';
@@ -78,7 +82,7 @@ export function toTitleCase(str) {
 
 /**
  * Normalize an entry object so all keys are in consistent camelCase.
- * Handles data coming from Google Sheets (lowercase) or localStorage (camelCase).
+ * Also cleans up date and timestamp fields from Google Sheet format.
  */
 export function normalizeEntry(raw) {
   if (!raw || typeof raw !== 'object') return raw;
@@ -106,6 +110,33 @@ export function normalizeEntry(raw) {
   // Ensure id is a number for consistent sorting
   if (entry.id !== undefined) {
     entry.id = Number(entry.id) || entry.id;
+  }
+
+  // Clean date field: extract YYYY-MM-DD from ISO strings like "2026-04-30T18:30:00.000Z"
+  if (entry.date && typeof entry.date === 'string' && entry.date.includes('T')) {
+    // Parse ISO and format as local YYYY-MM-DD
+    const d = new Date(entry.date);
+    if (!isNaN(d.getTime())) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      entry.date = `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
+  // Fix timestamp: convert numeric to readable, or clean bad values
+  if (entry.timestamp !== undefined) {
+    const ts = entry.timestamp;
+    if (typeof ts === 'number' && ts > 1000000000000) {
+      // Numeric millisecond timestamp
+      const d = new Date(ts);
+      entry.timestamp = !isNaN(d.getTime())
+        ? d.toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+        : '';
+    } else if (typeof ts === 'string' && ts.includes('1970')) {
+      // Already corrupted 1970 timestamp, clear it
+      entry.timestamp = '';
+    }
   }
 
   return entry;
