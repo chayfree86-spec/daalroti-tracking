@@ -262,8 +262,10 @@ function App() {
               title: entry.cashIncome || entry.onlineIncome ? 'Income Saved!' : 'Spend Saved!',
               message: 'Transaction has been recorded successfully.'
             });
-            setTimeout(() => handleTabChange(returnTab), 100);
-            setReturnTab('dashboard');
+            if (editingEntry) {
+              setTimeout(() => handleTabChange(returnTab), 100);
+              setReturnTab('dashboard');
+            }
           }} 
           onCancel={() => {
             setEditingEntry(null);
