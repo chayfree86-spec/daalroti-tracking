@@ -1,7 +1,20 @@
 const SYNC_URL_KEY = 'dr_sync_url';
+const DEFAULT_SYNC_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL
+  || 'https://script.google.com/macros/s/AKfycbwFDwYOR4LaNQlxoUyNgt0TW9ugyb0Ea64ay3lNvWWCUTfZXEPcxKfkp7OK5djwMhA/exec';
 
-export const getSyncUrl = () => localStorage.getItem(SYNC_URL_KEY) || '';
-export const setSyncUrl = (url) => localStorage.setItem(SYNC_URL_KEY, url);
+export const getSyncUrl = () => {
+  const savedUrl = localStorage.getItem(SYNC_URL_KEY);
+  return savedUrl?.trim() || DEFAULT_SYNC_URL.trim();
+};
+
+export const setSyncUrl = (url) => {
+  const cleanUrl = url?.trim() || '';
+  if (cleanUrl) {
+    localStorage.setItem(SYNC_URL_KEY, cleanUrl);
+  } else {
+    localStorage.removeItem(SYNC_URL_KEY);
+  }
+};
 
 export const fetchFromSheet = async () => {
   const url = getSyncUrl();
