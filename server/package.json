@@ -1,0 +1,19 @@
+{
+  "name": "daalroti-tracking-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Express + MySQL backend for DaalRoti Tracker",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "migrate": "node migrate.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "mysql2": "^3.22.5"
+  }
+}

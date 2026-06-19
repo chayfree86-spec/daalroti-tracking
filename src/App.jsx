@@ -6,7 +6,7 @@ import Analytics from './pages/Analytics';
 import BottomNav from './components/BottomNav';
 import CustomAlert from './components/CustomAlert';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getSyncUrl, setSyncUrl, fetchFromSheet, syncToSheet } from './lib/googleSheets';
+import { getApiUrl, setApiUrl, fetchEntries, syncEntries } from './lib/api';
 import { Settings, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { cn, normalizeEntry } from './lib/utils';
 
@@ -25,7 +25,7 @@ function App() {
   });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
   const [showSettings, setShowSettings] = useState(false);
-  const [syncUrlInput, setSyncUrlInput] = useState(getSyncUrl() || '');
+  const [syncUrlInput, setSyncUrlInput] = useState(getApiUrl() || '');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState(localStorage.getItem('dr_last_sync') || 'Never');
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
@@ -42,82 +42,49 @@ function App() {
     setActiveTab(tabId);
   };
 
-  // Sync Logic — ONLY allowed after first fetch from sheet
+  // Sync Logic — ONLY allowed after first fetch from server
   const handleSync = useCallback(async (dataToSync = entries) => {
-    if (!getSyncUrl() || dataToSync.length === 0) return;
-    
-    // SAFEGUARD: Never push to sheet if we haven't fetched first this session
-    // This prevents stale/empty localStorage from overwriting real sheet data
+    if (!getApiUrl() || dataToSync.length === 0) return;
+
+    // SAFEGUARD: Never push to server if we haven't fetched first this session.
+    // This prevents stale/empty localStorage from overwriting real server data.
     if (!hasFetchedThisSession.current) return;
-    
+
     setIsSyncing(true);
 
-    // Calculate Running Balances before syncing so they appear in the Sheet
-    const sortedForSync = [...dataToSync].sort((a, b) => {
-      if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
-      return a.id - b.id;
-    });
-
-    let runningCash = 0;
-    let runningOnline = 0;
-    const enrichedData = sortedForSync.map(entry => {
-      runningCash += (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
-      runningOnline += (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
-      
-      const rawEntry = {
-        ...entry,
-        cashBalance: runningCash,
-        onlineBalance: runningOnline,
-        totalBalance: runningCash + runningOnline
-      };
-
-      // Fix timestamp: convert numeric to readable string
-      if (rawEntry.timestamp && typeof rawEntry.timestamp === 'number') {
-        const ts = new Date(rawEntry.timestamp);
-        rawEntry.timestamp = isNaN(ts.getTime()) 
-          ? '' 
-          : ts.toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-      }
-
-      // Create a new object with all lowercase keys to match Google Sheet
-      const syncEntry = {};
-      Object.keys(rawEntry).forEach(key => {
-        syncEntry[key.toLowerCase()] = rawEntry[key];
-      });
-      return syncEntry;
-    });
-
     try {
-      await syncToSheet(enrichedData);
+      // Server stores entries in relational tables (entries + income/expense)
+      // and computes balances on read, so we send the raw camelCase entries.
+      await syncEntries(dataToSync);
       const now = new Date().toLocaleTimeString();
       setLastSynced(now);
       localStorage.setItem('dr_last_sync', now);
     } catch (error) {
       console.error('Sync failed');
-      setAppAlert({ show: true, type: 'error', title: 'Sync Failed!', message: 'Data sync mein problem aayi. Please check internet connection.' });
+      setAppAlert({ show: true, type: 'error', title: 'Sync Failed!', message: 'Data sync mein problem aayi. Please check server connection.' });
     } finally {
       setIsSyncing(false);
     }
   }, [entries]);
 
   const handleFetch = async () => {
-    if (!getSyncUrl()) return;
+    if (!getApiUrl()) return;
     setIsSyncing(true);
     try {
-      const data = await fetchFromSheet();
+      const data = await fetchEntries();
       if (data && Array.isArray(data)) {
         if (data.length > 0) {
-          // Sheet has data — update local
+          // Server has data — update local
           const normalized = data.map(normalizeEntry);
           skipAutoSync.current = true; // Don't auto-sync fetched data back
           setEntries(normalized);
           // Mark session as fetched — sync is now safe
           hasFetchedThisSession.current = true;
         } else if (entries.length > 0) {
-          // SAFEGUARD: Sheet returned empty but we have local data
+          // SAFEGUARD: Server returned empty but we have local data.
           // DON'T overwrite! Keep local data safe.
-          hasFetchedThisSession.current = true; // Allow sync so local data can push to sheet
-          setAppAlert({ show: true, type: 'warning', title: 'Sheet Empty!', message: 'Google Sheet mein koi data nahi mila. Local data safe hai.' });
+          hasFetchedThisSession.current = true; // Allow sync so local data can push to server
+          setAppAlert({ show: true, type: 'warning', title: 'Server Empty!', message: 'Server par koi data nahi mila. Local data safe hai.' });
         } else {
           // Both empty — nothing to do
           hasFetchedThisSession.current = true;
@@ -129,29 +96,29 @@ function App() {
       localStorage.setItem('dr_last_sync', now);
     } catch (error) {
       console.error('Fetch failed');
-      setAppAlert({ show: true, type: 'error', title: 'Fetch Failed!', message: 'Google Sheet se data nahi aa paaya. URL check karein.' });
+      setAppAlert({ show: true, type: 'error', title: 'Fetch Failed!', message: 'Server se data nahi aa paaya. Server URL/connection check karein.' });
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Auto-fetch from sheet on app mount (if URL is configured)
+  // Auto-fetch from server on app mount (if URL is configured)
   useEffect(() => {
-    if (getSyncUrl()) {
+    if (getApiUrl()) {
       handleFetch();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // LIVE BACKGROUND SYNC: Periodically check for updates from other devices
   useEffect(() => {
-    if (!getSyncUrl()) return;
+    if (!getApiUrl()) return;
 
     const liveSyncInterval = setInterval(async () => {
       // Don't background sync if we are already syncing or editing
       if (isSyncing || editingEntry) return;
 
       try {
-        const data = await fetchFromSheet();
+        const data = await fetchEntries();
         if (data && Array.isArray(data) && data.length > 0) {
           const normalized = data.map(normalizeEntry);
           
@@ -221,7 +188,7 @@ function App() {
   };
 
   const saveSettings = () => {
-    setSyncUrl(syncUrlInput);
+    setApiUrl(syncUrlInput);
     setShowSettings(false);
     handleFetch(); // Initial fetch
   };
@@ -234,7 +201,7 @@ function App() {
     )}>
       {isSyncing ? (
         <RefreshCw size={12} className="text-primary animate-spin" />
-      ) : getSyncUrl() ? (
+      ) : getApiUrl() ? (
         <Cloud size={12} className="text-income" />
       ) : (
         <CloudOff size={12} className="text-slate-300" />
@@ -375,22 +342,22 @@ function App() {
                   <Settings size={32} />
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sync Settings</h2>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Connect Google Sheets</p>
+                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Connect MySQL Server</p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4 mb-2 block">Apps Script URL</label>
-                  <input 
-                    type="text" 
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4 mb-2 block">Server API URL</label>
+                  <input
+                    type="text"
                     value={syncUrlInput}
                     onChange={(e) => setSyncUrlInput(e.target.value)}
-                    placeholder="https://script.google.com/macros/s/..."
+                    placeholder="/api  ya  http://localhost:3001/api"
                     className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-700 text-sm"
                   />
                 </div>
                 <p className="text-[10px] text-slate-400 leading-relaxed text-center px-4">
-                  Paste your Google Apps Script Web App URL to sync data across devices.
+                  Enter the MySQL server's API base URL to sync data across devices.
                 </p>
               </div>
 
