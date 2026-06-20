@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const CustomAlert = ({ type = 'info', title, message, onConfirm, onCancel, show }) => {
@@ -9,9 +9,11 @@ const CustomAlert = ({ type = 'info', title, message, onConfirm, onCancel, show 
     info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
     success: { icon: CheckCircle2, color: 'text-income', bg: 'bg-income/10' },
     error: { icon: AlertCircle, color: 'text-spend', bg: 'bg-spend/10' },
+    warning: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   };
 
-  const { icon: Icon, color, bg } = icons[type];
+  // Fall back to 'info' for any unknown type so an alert never crashes the app.
+  const { icon: Icon, color, bg } = icons[type] || icons.info;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[200] p-6 animate-in fade-in duration-300">

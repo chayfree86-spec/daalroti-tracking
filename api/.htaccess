@@ -1,0 +1,11 @@
+# Route every /api/* request to the front controller (index.php),
+# so PUT /api/entries/123 etc. work without separate files.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# Never expose the DB credentials file.
+<Files config.php>
+    Require all denied
+</Files>

@@ -6,32 +6,28 @@ import Analytics from './pages/Analytics';
 import BottomNav from './components/BottomNav';
 import CustomAlert from './components/CustomAlert';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getApiUrl, setApiUrl, fetchEntries, syncEntries } from './lib/api';
-import { Settings, Cloud, CloudOff, RefreshCw } from 'lucide-react';
-import { cn, normalizeEntry } from './lib/utils';
+import { getApiUrl, fetchEntries, fetchRev, createEntry, updateEntry, removeEntry, subscribeToChanges } from './lib/api';
+import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { cn, normalizeEntry, timeIST } from './lib/utils';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [editingEntry, setEditingEntry] = useState(null);
   const [returnTab, setReturnTab] = useState('dashboard');
-  const [entries, setEntries] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dr_entries');
-      let parsed = saved ? JSON.parse(saved) : [];
-      return Array.isArray(parsed) ? parsed.map(normalizeEntry) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  // DB-direct: entries live in MySQL only — nothing is persisted to localStorage.
+  const [entries, setEntries] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
-  const [showSettings, setShowSettings] = useState(false);
-  const [syncUrlInput, setSyncUrlInput] = useState(getApiUrl() || '');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState(localStorage.getItem('dr_last_sync') || 'Never');
+  const [lastSynced, setLastSynced] = useState('Never');
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
   const [appAlert, setAppAlert] = useState({ show: false, type: 'success', title: '', message: '' });
-  const skipAutoSync = useRef(false);
-  const hasFetchedThisSession = useRef(false); // CRITICAL: Block sync until first fetch
+
+  // Refs mirror state so the stable SSE/poll callbacks read fresh values
+  // without re-subscribing on every change.
+  const isSyncingRef = useRef(false);
+  const editingRef = useRef(false);
+  useEffect(() => { isSyncingRef.current = isSyncing; }, [isSyncing]);
+  useEffect(() => { editingRef.current = !!editingEntry; }, [editingEntry]);
 
   const handleTabChange = (tabId) => {
     // Always clear editing state when navigating via tabs, 
@@ -42,155 +38,119 @@ function App() {
     setActiveTab(tabId);
   };
 
-  // Sync Logic — ONLY allowed after first fetch from server
-  const handleSync = useCallback(async (dataToSync = entries) => {
-    if (!getApiUrl() || dataToSync.length === 0) return;
-
-    // SAFEGUARD: Never push to server if we haven't fetched first this session.
-    // This prevents stale/empty localStorage from overwriting real server data.
-    if (!hasFetchedThisSession.current) return;
-
-    setIsSyncing(true);
-
-    try {
-      // Server stores entries in relational tables (entries + income/expense)
-      // and computes balances on read, so we send the raw camelCase entries.
-      await syncEntries(dataToSync);
-      const now = new Date().toLocaleTimeString();
-      setLastSynced(now);
-      localStorage.setItem('dr_last_sync', now);
-    } catch (error) {
-      console.error('Sync failed');
-      setAppAlert({ show: true, type: 'error', title: 'Sync Failed!', message: 'Data sync mein problem aayi. Please check server connection.' });
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [entries]);
-
-  const handleFetch = async () => {
+  // Load all entries directly from the database.
+  const loadEntries = useCallback(async (showError = true) => {
     if (!getApiUrl()) return;
-    setIsSyncing(true);
     try {
       const data = await fetchEntries();
-      if (data && Array.isArray(data)) {
-        if (data.length > 0) {
-          // Server has data — update local
-          const normalized = data.map(normalizeEntry);
-          skipAutoSync.current = true; // Don't auto-sync fetched data back
-          setEntries(normalized);
-          // Mark session as fetched — sync is now safe
-          hasFetchedThisSession.current = true;
-        } else if (entries.length > 0) {
-          // SAFEGUARD: Server returned empty but we have local data.
-          // DON'T overwrite! Keep local data safe.
-          hasFetchedThisSession.current = true; // Allow sync so local data can push to server
-          setAppAlert({ show: true, type: 'warning', title: 'Server Empty!', message: 'Server par koi data nahi mila. Local data safe hai.' });
-        } else {
-          // Both empty — nothing to do
-          hasFetchedThisSession.current = true;
-        }
+      if (Array.isArray(data)) {
+        setEntries(data.map(normalizeEntry));
       }
-      // Update last synced time
-      const now = new Date().toLocaleTimeString();
-      setLastSynced(now);
-      localStorage.setItem('dr_last_sync', now);
+      setLastSynced(timeIST());
     } catch (error) {
-      console.error('Fetch failed');
-      setAppAlert({ show: true, type: 'error', title: 'Fetch Failed!', message: 'Server se data nahi aa paaya. Server URL/connection check karein.' });
-    } finally {
-      setIsSyncing(false);
+      console.error('Load failed', error);
+      if (showError) {
+        setAppAlert({ show: true, type: 'error', title: 'Load Failed!', message: 'Server se data nahi aaya. Server URL/connection check karein.' });
+      }
     }
-  };
+  }, []);
 
-  // Auto-fetch from server on app mount (if URL is configured)
+  // Initial load on app mount. Also purge any legacy localStorage from the old
+  // offline-first version — transaction data now lives only in the database.
   useEffect(() => {
-    if (getApiUrl()) {
-      handleFetch();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    localStorage.removeItem('dr_entries');
+    localStorage.removeItem('dr_last_sync');
+    loadEntries();
+  }, [loadEntries]);
 
-  // LIVE BACKGROUND SYNC: Periodically check for updates from other devices
+  // MULTI-DEVICE SYNC: cheap "revision" polling (count + last-change time).
+  // Every few seconds we fetch a tiny signature; only when it changes do we pull
+  // the full dataset. Works everywhere incl. shared hosting. SSE (when enabled,
+  // e.g. dev/VPS) adds instant push on top.
+  const lastRevRef = useRef(null);
   useEffect(() => {
     if (!getApiUrl()) return;
 
-    const liveSyncInterval = setInterval(async () => {
-      // Don't background sync if we are already syncing or editing
-      if (isSyncing || editingEntry) return;
+    const refresh = () => {
+      // Skip while saving or editing to avoid clobbering in-progress work.
+      if (isSyncingRef.current || editingRef.current) return;
+      loadEntries(false); // silent — no alert on transient failure
+    };
 
+    const checkRev = async () => {
+      if (isSyncingRef.current || editingRef.current) return;
       try {
-        const data = await fetchEntries();
-        if (data && Array.isArray(data) && data.length > 0) {
-          const normalized = data.map(normalizeEntry);
-          
-          // Check if data is actually different before updating
-          // This prevents unnecessary re-renders
-          const currentDataStr = JSON.stringify(entries);
-          const newDataStr = JSON.stringify(normalized);
-          
-          if (newDataStr !== currentDataStr) {
-            console.log('Background Sync: Fresh data found!');
-            skipAutoSync.current = true;
-            setEntries(normalized);
-            
-            // Optional: Update last synced time
-            const now = new Date().toLocaleTimeString();
-            setLastSynced(now);
-            localStorage.setItem('dr_last_sync', now);
-          }
+        const rev = await fetchRev();
+        if (rev !== null && lastRevRef.current !== null && rev !== lastRevRef.current) {
+          refresh();
         }
-      } catch (error) {
-        console.warn('Background sync check failed');
+        if (rev !== null) lastRevRef.current = rev;
+      } catch {
+        // transient — ignore, try again next tick
       }
-    }, 30000); // Check every 30 seconds
+    };
 
-    return () => clearInterval(liveSyncInterval);
-  }, [entries, isSyncing, editingEntry]);
+    const unsubscribe = subscribeToChanges(refresh); // instant push (if SSE on)
+    const interval = setInterval(checkRev, 4000);     // cheap rev poll (~4s)
 
-  useEffect(() => {
-    localStorage.setItem('dr_entries', JSON.stringify(entries));
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [loadEntries]);
 
-    // Skip auto-sync if this update came from a fetch
-    if (skipAutoSync.current) {
-      skipAutoSync.current = false;
-      return;
+  // Create or update an entry DIRECTLY in the database (no local persistence).
+  const addEntry = async (entry) => {
+    const wasEdit = !!editingEntry;
+    const id = wasEdit ? editingEntry.id : entry.id;
+    setIsSyncing(true);
+    try {
+      if (wasEdit) {
+        await updateEntry(id, { ...entry, id });
+      } else {
+        await createEntry(entry);
+      }
+      await loadEntries();
+      setAppAlert({
+        show: true,
+        type: 'success',
+        title: (entry.cashIncome || entry.onlineIncome) ? 'Income Saved!' : 'Spend Saved!',
+        message: 'Transaction database mein save ho gaya.',
+      });
+    } catch (error) {
+      console.error('Save failed', error);
+      setAppAlert({ show: true, type: 'error', title: 'Save Failed!', message: 'Database mein save nahi hua. Server connection check karein.' });
+    } finally {
+      setIsSyncing(false);
+      if (wasEdit) setEditingEntry(null);
     }
-
-    // Auto-sync after 2 seconds of inactivity
-    const timeout = setTimeout(() => {
-      handleSync(entries);
-    }, 2000);
-    return () => clearTimeout(timeout);
-  }, [entries, handleSync]);
-
-  const addEntry = (entry) => {
-    setEntries(prevEntries => {
-      if (editingEntry) {
-        return prevEntries.map(e => e.id === editingEntry.id ? { ...entry, id: editingEntry.id } : e);
-      }
-      return [entry, ...prevEntries];
-    });
-    if (editingEntry) setEditingEntry(null);
   };
 
   const deleteEntry = (id) => {
     setDeleteConfirm({ show: true, id });
   };
 
-  const confirmDelete = () => {
-    setEntries(entries.filter(e => e.id !== deleteConfirm.id));
+  // Delete an entry DIRECTLY from the database.
+  const confirmDelete = async () => {
+    const id = deleteConfirm.id;
     setDeleteConfirm({ show: false, id: null });
+    setIsSyncing(true);
+    try {
+      await removeEntry(id);
+      await loadEntries();
+      setAppAlert({ show: true, type: 'success', title: 'Deleted!', message: 'Entry database se hata di gayi.' });
+    } catch (error) {
+      console.error('Delete failed', error);
+      setAppAlert({ show: true, type: 'error', title: 'Delete Failed!', message: 'Database se delete nahi hua. Server connection check karein.' });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleEdit = (entry) => {
     setReturnTab(activeTab);
     setEditingEntry(entry);
     setActiveTab('add');
-  };
-
-  const saveSettings = () => {
-    setApiUrl(syncUrlInput);
-    setShowSettings(false);
-    handleFetch(); // Initial fetch
   };
 
   const SyncStatus = ({ compact }) => (
@@ -222,18 +182,14 @@ function App() {
           entries={entries} 
           editData={editingEntry} 
           onSave={(entry) => {
+            const wasEdit = !!editingEntry;
+            // addEntry writes straight to the DB and shows its own success/error alert.
             addEntry(entry);
-            setAppAlert({
-              show: true,
-              type: 'success',
-              title: entry.cashIncome || entry.onlineIncome ? 'Income Saved!' : 'Spend Saved!',
-              message: 'Transaction has been recorded successfully.'
-            });
-            if (editingEntry) {
+            if (wasEdit) {
               setTimeout(() => handleTabChange(returnTab), 100);
               setReturnTab('dashboard');
             }
-          }} 
+          }}
           onCancel={() => {
             setEditingEntry(null);
             setTimeout(() => handleTabChange(returnTab), 100);
@@ -241,15 +197,15 @@ function App() {
           }}
         />;
       case 'reports':
-        return <History 
-          entries={entries} 
-          onDelete={deleteEntry} 
+        return <History
+          entries={entries}
+          onDelete={deleteEntry}
           onEdit={handleEdit}
           onSave={(entry) => {
             addEntry(entry);
             setTimeout(() => handleTabChange(returnTab), 100);
             setReturnTab('dashboard');
-          }} 
+          }}
           onCancel={() => {
             setEditingEntry(null);
             setTimeout(() => handleTabChange(returnTab), 100);
@@ -282,105 +238,12 @@ function App() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Page Footer - Show ONLY on Dashboard */}
-      {activeTab === 'dashboard' && (
-        <footer className="container mx-auto px-6 py-4 md:py-8 border-t border-slate-100 mt-2 md:mt-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-xl shadow-lg">
-                DR
-              </div>
-              <div>
-                <h4 className="text-slate-800 font-black text-lg tracking-tight">DaalRoti Tracker</h4>
-                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Premium Expense Management</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
-              >
-                <Settings size={14} />
-                Sync Settings
-              </button>
-              <div className="text-slate-300 font-black text-[10px] uppercase tracking-widest">
-                v2.4.0
-              </div>
-            </div>
-          </div>
-          <p className="text-center text-slate-300 font-bold text-[10px] uppercase tracking-widest mt-6">
-            Designed for Clarity & Efficiency
-          </p>
-        </footer>
-      )}
-
-      <BottomNav 
-        activeTab={activeTab} 
-        setActiveTab={handleTabChange} 
+      <BottomNav
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
       />
 
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {showSettings && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowSettings(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 relative z-10 space-y-8"
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Settings size={32} />
-                </div>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sync Settings</h2>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Connect MySQL Server</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4 mb-2 block">Server API URL</label>
-                  <input
-                    type="text"
-                    value={syncUrlInput}
-                    onChange={(e) => setSyncUrlInput(e.target.value)}
-                    placeholder="/api  ya  http://localhost:3001/api"
-                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-700 text-sm"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 leading-relaxed text-center px-4">
-                  Enter the MySQL server's API base URL to sync data across devices.
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button 
-                  onClick={() => setShowSettings(false)}
-                  className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 text-slate-400 font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={saveSettings}
-                  className="flex-1 px-6 py-4 rounded-2xl bg-primary text-slate-900 font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                  Save & Sync
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <CustomAlert 
+      <CustomAlert
         show={appAlert.show}
         type={appAlert.type}
         title={appAlert.title}
@@ -393,16 +256,7 @@ function App() {
         type="error"
         title="Delete Entry?"
         message="This action cannot be undone. Do you want to continue?"
-        onConfirm={() => {
-          setEntries(entries.filter(e => e.id !== deleteConfirm.id));
-          setDeleteConfirm({ show: false, id: null });
-          setAppAlert({
-            show: true,
-            type: 'success',
-            title: 'Deleted!',
-            message: 'Entry has been removed successfully.'
-          });
-        }}
+        onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm({ show: false, id: null })}
       />
     </div>

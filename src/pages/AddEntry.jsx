@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn, formatDate, toTitleCase } from '../lib/utils';
+import { cn, formatDate, toTitleCase, todayIST, nowIST } from '../lib/utils';
 import CustomCalendar from '../components/CustomCalendar';
 import CustomAlert from '../components/CustomAlert';
 
 const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: todayIST(),
     cashIncome: '',
     onlineIncome: '',
     cashSpend: '',
@@ -22,7 +22,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   useEffect(() => {
     if (editData) {
       setFormData({
-        date: editData.date || new Date().toISOString().split('T')[0],
+        date: editData.date || todayIST(),
         cashIncome: editData.cashIncome !== undefined && editData.cashIncome !== null && editData.cashIncome !== '' ? String(editData.cashIncome) : '',
         onlineIncome: editData.onlineIncome !== undefined && editData.onlineIncome !== null && editData.onlineIncome !== '' ? String(editData.onlineIncome) : '',
         cashSpend: editData.cashSpend !== undefined && editData.cashSpend !== null && editData.cashSpend !== '' ? String(editData.cashSpend) : '',
@@ -32,7 +32,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       });
     } else {
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: todayIST(),
         cashIncome: '',
         onlineIncome: '',
         cashSpend: '',
@@ -44,9 +44,14 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   }, [editData]);
 
   const changeDate = (days) => {
-    const currentDate = new Date(formData.date);
-    currentDate.setDate(currentDate.getDate() + days);
-    setFormData(prev => ({ ...prev, date: currentDate.toISOString().split('T')[0] }));
+    // Parse as local midnight (NOT UTC) so day arithmetic never shifts by a day.
+    const [y, m, d] = formData.date.split('-').map(Number);
+    const current = new Date(y, m - 1, d);
+    current.setDate(current.getDate() + days);
+    const ny = current.getFullYear();
+    const nm = String(current.getMonth() + 1).padStart(2, '0');
+    const nd = String(current.getDate()).padStart(2, '0');
+    setFormData(prev => ({ ...prev, date: `${ny}-${nm}-${nd}` }));
   };
 
   const [showCalendar, setShowCalendar] = useState(false);
@@ -106,7 +111,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: '',
       remark: toTitleCase(formData.incomeRemark.trim()) || 'Income',
       id: Date.now(),
-      timestamp: new Date().toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+      timestamp: nowIST(),
     };
     onSave(entry);
     
@@ -138,7 +143,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       onlineSpend: formData.onlineSpend,
       remark: toTitleCase(formData.spendRemark.trim()) || 'Spend',
       id: Date.now(),
-      timestamp: new Date().toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+      timestamp: nowIST(),
     };
     onSave(entry);
     

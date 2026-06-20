@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
-import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
+import { formatCurrency, formatDate, cn, numberToWords, nowPartsIST } from '../lib/utils';
 
 const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus }) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const ist = nowPartsIST();
+  const [selectedMonth, setSelectedMonth] = useState(ist.month); // 1-12
+  const [selectedYear, setSelectedYear] = useState(ist.year);
   const [isAllTime, setIsAllTime] = useState(false);
   
   // Sort entries by date and then by ID (timestamp) to ensure consistent running balance
@@ -91,7 +92,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
   const displayOpeningTotal = displayOpeningCash + displayOpeningOnline;
 
   const availableYears = [...new Set(entries.map(e => new Date(e.date).getFullYear()))];
-  const currentYear = new Date().getFullYear();
+  const currentYear = ist.year;
   if (!availableYears.includes(currentYear)) availableYears.push(currentYear);
   availableYears.sort((a, b) => b - a);
 
@@ -194,7 +195,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
                   { label: 'All Months', value: 'all' },
                   ...months
                     .map((m, i) => ({ label: m, value: i + 1 }))
-                    .filter(m => selectedYear < new Date().getFullYear() || m.value <= new Date().getMonth() + 1)
+                    .filter(m => selectedYear < ist.year || m.value <= ist.month)
                     .reverse()
                 ]}
                 onChange={setSelectedMonth}

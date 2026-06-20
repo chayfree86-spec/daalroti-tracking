@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../db.js';
+import { broadcast } from '../events.js';
 
 const router = express.Router();
 
@@ -149,6 +150,7 @@ router.post('/sync', async (req, res) => {
     );
 
     await conn.commit();
+    broadcast('entries-changed', { reason: 'sync', count: valid.length });
     res.json({ ok: true, synced: valid.length });
   } catch (err) {
     await conn.rollback();
@@ -169,6 +171,7 @@ router.post('/', async (req, res) => {
     await conn.beginTransaction();
     await upsertEntry(conn, e);
     await conn.commit();
+    broadcast('entries-changed', { reason: 'create', id: e.id });
     const [rows] = await conn.query(`${SELECT_ENTRIES} WHERE e.id = ?`, [e.id]);
     res.status(201).json(rows[0] ? toApiEntry(rows[0]) : { ok: true });
   } catch (err) {
@@ -190,6 +193,7 @@ router.put('/:id', async (req, res) => {
     await conn.beginTransaction();
     await upsertEntry(conn, e);
     await conn.commit();
+    broadcast('entries-changed', { reason: 'update', id: e.id });
     const [rows] = await conn.query(`${SELECT_ENTRIES} WHERE e.id = ?`, [e.id]);
     res.json(rows[0] ? toApiEntry(rows[0]) : { ok: true });
   } catch (err) {
@@ -207,6 +211,7 @@ router.delete('/:id', async (req, res) => {
     const [result] = await pool.query('DELETE FROM entries WHERE id = ?', [
       Number(req.params.id),
     ]);
+    broadcast('entries-changed', { reason: 'delete', id: Number(req.params.id) });
     res.json({ ok: true, deleted: result.affectedRows });
   } catch (err) {
     console.error('DELETE /entries failed:', err.message);

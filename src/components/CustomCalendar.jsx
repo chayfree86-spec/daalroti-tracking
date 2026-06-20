@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, todayIST } from '../lib/utils';
 
 const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate || new Date()));
@@ -37,7 +37,7 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
   for (let d = 1; d <= totalDays; d++) {
     const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const isSelected = selectedDate === dateStr;
-    const isToday = new Date().toISOString().split('T')[0] === dateStr;
+    const isToday = todayIST() === dateStr;
 
     days.push(
       <button
@@ -95,7 +95,7 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
           <button 
             type="button"
             onClick={() => {
-              onSelect(new Date().toISOString().split('T')[0]);
+              onSelect(todayIST());
               onClose();
             }}
             className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
