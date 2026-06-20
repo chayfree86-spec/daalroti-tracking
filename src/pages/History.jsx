@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet } from 'lucide-react';
-import { formatCurrency, formatDate, cn, numberToWords } from '../lib/utils';
+import { formatCurrency, formatDate, cn, numberToWords, todayIST } from '../lib/utils';
 
 const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlightedEntryId, syncStatus }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const currentMonthStr = todayIST().slice(0, 7);
   const [filterMonth, setFilterMonth] = useState(currentMonthStr);
   const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'spend'
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
@@ -93,8 +93,10 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
     if (searchTerm === '' && filterMonth) {
       const [year, month] = filterMonth.split('-').map(Number);
       const daysInMonth = new Date(year, month, 0).getDate();
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // End of today
+      // "Today" in IST as a local-midnight Date, end-of-day, so future days are skipped correctly.
+      const [ty, tm, td] = todayIST().split('-').map(Number);
+      const today = new Date(ty, tm - 1, td);
+      today.setHours(23, 59, 59, 999); // End of today (IST)
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;

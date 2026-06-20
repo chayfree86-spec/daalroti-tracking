@@ -4,47 +4,40 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area 
 } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, PieChart as PieIcon, Activity, ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
-import { formatCurrency, cn } from '../lib/utils';
+import { formatCurrency, cn, nowPartsIST } from '../lib/utils';
 
 const Analytics = ({ entries, syncStatus }) => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const ist = nowPartsIST();
+  const [selectedMonth, setSelectedMonth] = useState(ist.month);
+  const [selectedYear, setSelectedYear] = useState(ist.year);
   const [isAllTime, setIsAllTime] = useState(false);
 
   // Data Processing
   const stats = useMemo(() => {
     if (!entries.length) return {
-      monthlyData: [], 
+      monthlyData: [],
       dailyData: [],
-      totalIncome: 0, 
-      totalSpend: 0, 
-      cashBalance: 0, 
+      totalIncome: 0,
+      totalSpend: 0,
+      cashBalance: 0,
       onlineBalance: 0,
-      topCategories: [],
-      maxIncomeDay: { date: '', amount: 0 },
-      maxSpendDay: { date: '', amount: 0 },
+      openingBalance: 0,
+      closingBalance: 0,
       highValueEntries: [],
-      totalEntries: 0
     };
 
     const monthMap = {};
-    const categoryMap = {};
     const dailyMap = {};
-    
+
     let totalIncome = 0;
     let totalSpend = 0;
-    let totalCashIn = 0;
-    let totalOnlineIn = 0;
-    let totalCashOut = 0;
-    let totalOnlineOut = 0;
-    let maxIncomeDay = { date: '', amount: 0 };
-    let maxSpendDay = { date: '', amount: 0 };
 
     const filterStr = selectedMonth === 'all' ? `${selectedYear}` : `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
     entries.forEach(entry => {
       const entryMonth = entry.date.slice(0, 7);
-      const isMatch = isAllTime || entryMonth === filterStr;
+      // startsWith handles both a specific month ("2026-05") and a whole year ("2026").
+      const isMatch = isAllTime || entry.date.startsWith(filterStr);
 
       const cashIn = Number(entry.cashIncome || 0);
       const onlineIn = Number(entry.onlineIncome || 0);
@@ -53,57 +46,68 @@ const Analytics = ({ entries, syncStatus }) => {
       const income = cashIn + onlineIn;
       const spend = cashOut + onlineOut;
 
-      const isOpeningBalance = entry.remark?.toLowerCase().includes('opening balance');
-
-      // Group for all-time trends
+      // Group ALL entries by month for the cumulative trend (independent of filter).
       if (!monthMap[entryMonth]) {
-        monthMap[entryMonth] = { month: entryMonth, income: 0, spend: 0, net: 0, cashBal: 0, onlineBal: 0 };
+        monthMap[entryMonth] = { month: entryMonth, income: 0, spend: 0, cashNet: 0, onlineNet: 0, cashBal: 0, onlineBal: 0 };
       }
       monthMap[entryMonth].income += income;
       monthMap[entryMonth].spend += spend;
-      monthMap[entryMonth].net += (income - spend);
+      monthMap[entryMonth].cashNet += (cashIn - cashOut);
+      monthMap[entryMonth].onlineNet += (onlineIn - onlineOut);
 
-      // Only aggregate stats for the selected period
+      // Aggregate KPIs only for the selected period.
       if (isMatch) {
         totalIncome += income;
         totalSpend += spend;
-        totalCashIn += cashIn;
-        totalOnlineIn += onlineIn;
-        totalCashOut += cashOut;
-        totalOnlineOut += onlineOut;
 
-        if (income > maxIncomeDay.amount) maxIncomeDay = { date: entry.date, amount: income };
-        if (spend > maxSpendDay.amount) maxSpendDay = { date: entry.date, amount: spend };
-
-        // Daily trend for the selected month
         if (!dailyMap[entry.date]) dailyMap[entry.date] = { date: entry.date, income: 0, spend: 0 };
         dailyMap[entry.date].income += income;
         dailyMap[entry.date].spend += spend;
-
-        // Category breakdown
-        if (spend > 0) {
-          const remark = entry.remark || 'General Spend';
-          categoryMap[remark] = (categoryMap[remark] || 0) + spend;
-        }
       }
     });
 
     const monthlyData = Object.values(monthMap).sort((a, b) => a.month.localeCompare(b.month));
-    
-    // Calculate running balance for trend line
+
+    // Cumulative running balances per month — Cash AND Online tracked separately.
     let rCash = 0;
     let rOnline = 0;
     monthlyData.forEach(m => {
-      rCash += (m.income - m.spend); // Simplified for trend
+      rCash += m.cashNet;
+      rOnline += m.onlineNet;
       m.cashBal = rCash;
       m.onlineBal = rOnline;
     });
 
+    // Actual balance as of the END of the selected period (carries forward),
+    // not just the period's own net flow.
+    const targetMonth = isAllTime
+      ? (monthlyData.length ? monthlyData[monthlyData.length - 1].month : '')
+      : (selectedMonth === 'all' ? `${selectedYear}-12` : filterStr);
+    let cashBalance = 0;
+    let onlineBalance = 0;
+    for (const m of monthlyData) {
+      if (m.month <= targetMonth) {
+        cashBalance = m.cashBal;
+        onlineBalance = m.onlineBal;
+      }
+    }
+
+    // Opening balance = cumulative balance carried forward from BEFORE the period.
+    const startMonth = isAllTime
+      ? '0000-00'
+      : (selectedMonth === 'all' ? `${selectedYear}-01` : filterStr);
+    let openCash = 0;
+    let openOnline = 0;
+    for (const m of monthlyData) {
+      if (m.month < startMonth) {
+        openCash = m.cashBal;
+        openOnline = m.onlineBal;
+      }
+    }
+    const openingBalance = openCash + openOnline;
+    const closingBalance = cashBalance + onlineBalance;
+
     const dailyData = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
-    const topCategories = Object.entries(categoryMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
 
     const highValueEntries = entries
       .filter(e => isAllTime || e.date.startsWith(filterStr))
@@ -111,24 +115,20 @@ const Analytics = ({ entries, syncStatus }) => {
       .sort((a, b) => b.total - a.total)
       .slice(0, 3);
 
-    return { 
-      monthlyData, 
+    return {
+      monthlyData,
       dailyData,
-      totalIncome, 
-      totalSpend, 
-      cashBalance: totalCashIn - totalCashOut, 
-      onlineBalance: totalOnlineIn - totalOnlineOut,
-      topCategories,
-      maxIncomeDay,
-      maxSpendDay,
+      totalIncome,
+      totalSpend,
+      cashBalance,
+      onlineBalance,
+      openingBalance,
+      closingBalance,
       highValueEntries,
-      totalEntries: entries.length
     };
   }, [entries, selectedMonth, selectedYear, isAllTime]);
 
 
-
-  const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
 
   const formatValue = (val) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
@@ -184,7 +184,7 @@ const Analytics = ({ entries, syncStatus }) => {
   };
 
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const years = Array.from({ length: 5 }, (_, i) => ist.year - i);
 
   return (
     <div className="container mx-auto p-6 pt-6 space-y-10 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -207,7 +207,7 @@ const Analytics = ({ entries, syncStatus }) => {
                 { label: 'All Months', value: 'all' },
                 ...months
                   .map((m, i) => ({ label: m, value: i + 1 }))
-                  .filter(m => selectedYear < new Date().getFullYear() || m.value <= new Date().getMonth() + 1)
+                  .filter(m => selectedYear < ist.year || m.value <= ist.month)
                   .reverse()
               ]}
               onChange={setSelectedMonth}
@@ -263,9 +263,39 @@ const Analytics = ({ entries, syncStatus }) => {
         <div className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white"><Calendar size={20} /></div>
-            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Entries</span>
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Active Days</span>
           </div>
           <h3 className="text-2xl font-black text-white tracking-tight">{stats.dailyData.length} active days</h3>
+        </div>
+      </div>
+
+      {/* Opening → Net → Closing Balance (carry-forward context) */}
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-premium border border-slate-50">
+        <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-6 sm:gap-2">
+          <div className="text-center">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+              {isAllTime ? 'Starting Balance' : 'Opening Balance'}
+            </p>
+            <p className="text-2xl font-black text-slate-700">{formatCurrency(stats.openingBalance)}</p>
+            <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">Pichle se carry-forward</p>
+          </div>
+
+          <div className="text-center border-y sm:border-y-0 sm:border-x border-slate-100 py-4 sm:py-0">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Is Period Ka Net</p>
+            <p className={cn(
+              "text-2xl font-black",
+              (stats.totalIncome - stats.totalSpend) >= 0 ? "text-income" : "text-spend"
+            )}>
+              {(stats.totalIncome - stats.totalSpend) >= 0 ? '+' : ''}{formatCurrency(stats.totalIncome - stats.totalSpend)}
+            </p>
+            <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">Income − Spend</p>
+          </div>
+
+          <div className="text-center">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Closing Balance</p>
+            <p className="text-2xl font-black text-slate-900">{formatCurrency(stats.closingBalance)}</p>
+            <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">Cash + Online total</p>
+          </div>
         </div>
       </div>
 
