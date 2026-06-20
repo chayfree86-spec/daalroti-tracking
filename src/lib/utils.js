@@ -80,6 +80,38 @@ export function toTitleCase(str) {
   return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
+// ---- India Standard Time (IST / Asia/Kolkata) helpers ----------------------
+// All "current date / time" must follow India time regardless of the device's
+// timezone. Never use new Date().toISOString() for the entry date — that is UTC
+// and shifts the day by ±1 around midnight IST.
+
+const IST_TZ = 'Asia/Kolkata';
+
+// Today's date in IST as 'YYYY-MM-DD' (en-CA formats in that order).
+export function todayIST() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: IST_TZ });
+}
+
+// Current { year, month, day } in IST (month is 1-12).
+export function nowPartsIST() {
+  const [year, month, day] = todayIST().split('-').map(Number);
+  return { year, month, day };
+}
+
+// Current timestamp in IST: 'DD/MM/YYYY, HH:MM:SS' (24h).
+export function nowIST() {
+  return new Date().toLocaleString('en-IN', {
+    timeZone: IST_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+}
+
+// Current clock time in IST (for the "last synced" label).
+export function timeIST() {
+  return new Date().toLocaleTimeString('en-IN', { timeZone: IST_TZ });
+}
+
 /**
  * Normalize an entry object so all keys are in consistent camelCase.
  * Also cleans up date and timestamp fields from Google Sheet format.
@@ -131,7 +163,7 @@ export function normalizeEntry(raw) {
       // Numeric millisecond timestamp
       const d = new Date(ts);
       entry.timestamp = !isNaN(d.getTime())
-        ? d.toLocaleString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+        ? d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
         : '';
     } else if (typeof ts === 'string' && ts.includes('1970')) {
       // Already corrupted 1970 timestamp, clear it
