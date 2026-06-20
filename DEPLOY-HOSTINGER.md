@@ -1,53 +1,50 @@
 # DaalRoti Tracker — Hostinger Deploy Guide (Shared Hosting)
 
 Shared hosting par Node nahi chalta, isliye backend ka **PHP version** use hota hai.
-Setup: frontend `public_html/` (root) par, API `public_html/api/` par — **same domain**.
+**Subdomain ka document root = `dist/` folder** (e.g. `.../daalrotirevenue/dist`).
 
-Project me ab `api/` folder **root** par hai, aur `.htaccess` `public/` me hai (build
-ke time apne aap `dist/` me aa jata hai). Final upload ke baad:
+Ab `npm run build` ke baad **`dist/` ek complete deployable folder** hota hai —
+frontend + `app-config.js` + `.htaccess` + **`api/` (PHP backend bhi andar)**.
+Build har baar `api/` ko `dist/api/` me copy karta hai (vite.config.js plugin), to
+woh kabhi clear nahi hota:
 
 ```
-public_html/
-├── index.html          ← frontend build (dist/ ka content)
-├── assets/             ← frontend build
-├── app-config.js       ← API URL yahin se (server pe edit kar sakte ho)
-├── sw.js, manifest...  ← PWA files
-├── .htaccess           ← build me apne aap aata hai (public/.htaccess se)
-└── api/                ← project root ke api/ folder ka content
-    ├── index.php
-    ├── db.php
-    ├── config.php      ← yahan DB creds bharo
-    ├── .htaccess
-    └── schema.sql
+dist/                    ← yahi subdomain ka docroot hai (yahin se site chalti hai)
+├── index.html
+├── app-config.js        ← API URL (server pe edit kar sakte ho, rebuild nahi)
+├── assets/
+├── .htaccess
+├── sw.js, manifest...
+└── api/                 ← build me apne aap aata hai (root api/ se copy)
+    ├── index.php, db.php, .htaccess, schema.sql
+    └── config.php       ← real DB creds (gitignored; build ke saath dist me aata hai)
 ```
 
-## 1. Database banao (hPanel)
-1. hPanel → **Databases → MySQL Databases**
-2. Nayi database + user banao (note: naam `uXXXXXXXX_daalroti` jaisa hoga). Password yaad rakho.
-3. User ko database se **"All Privileges"** ke saath assign karo.
+## 1. DB creds set (ek baar, local)
+`api/config.sample.php` ko `api/config.php` naam se copy karke real Hostinger DB
+creds bharo. Yeh file gitignored hai aur har build me `dist/api/` me chali jaati hai,
+to pura `dist/` safely re-upload kar sakte ho (creds nahi mitenge).
 
-## 2. Tables banao
-1. hPanel → **phpMyAdmin** → apni database select karo → **Import** tab
-2. `api/schema.sql` upload karke **Go** — `entries`, `income`, `expense` ban jayenge.
+## 2. Database banao (hPanel)
+1. hPanel → **Databases → MySQL Databases** → DB + user banao (naam `uXXXXXXXX_...`).
+2. User ko **All Privileges** ke saath assign karo.
 
-## 3. PHP API config
-1. `api/config.php` me apne DB ke `name`, `user`, `pass` daalo (host `localhost` rehne do).
+## 3. Tables banao
+hPanel → **phpMyAdmin** → DB select → **Import** → `api/schema.sql` → Go.
+(`entries`, `income`, `expense` ban jayenge.)
 
-## 4. Frontend build
-Local machine par:
+## 4. Build
 ```bash
 cd daalroti-tracking
-npm run build          # .env.production use hota hai (SSE off, rev-polling on)
+npm run build     # dist/ banega — frontend + api/ + .htaccess + app-config.js sab andar
 ```
-`dist/` folder banega (usme `.htaccess` aur `app-config.js` bhi honge).
 
-## 5. Upload (File Manager ya FTP)
-1. `dist/` ke **andar ka saara content** → `public_html/` me daalo (dist folder khud nahi, uske andar ki files — `.htaccess` aur `app-config.js` sahit).
-2. project ke `api/` folder ka content → `public_html/api/` me daalo (config.php bhara hua).
-3. Bas — `.htaccess` rename/copy karne ki zaroorat nahi (build me already aa gaya).
+## 5. Upload
+`dist/` ke **andar ka saara content** (api/ sahit) → subdomain ke docroot
+(`.../daalrotirevenue/dist`) me daalo. Bas — alag se kuch upload/rename nahi.
 
-> **API URL:** default `app-config.js` me `api/` (relative) hai jo same-domain par
-> kaam karta hai. Agar API alag jagah ho to bas `public_html/app-config.js` edit
+> **API URL:** `app-config.js` khaali hai → relative `api/` use hota hai (same-domain).
+> Agar API alag domain par ho to server par `dist/app-config.js` me `API_URL` set
 > karo — **rebuild ki zaroorat nahi**.
 
 ## 6. Test

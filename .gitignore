@@ -10,6 +10,11 @@ lerna-debug.log*
 node_modules
 *.local
 
+# Live DB credentials — keep out of git; copy api/config.sample.php to
+# api/config.php locally and fill real creds (the build copies it into dist/api/).
+api/config.php
+dist
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -20,3 +25,4 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+*.env

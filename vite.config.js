@@ -1,6 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { cpSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+// Copy the PHP API into the build output so `dist/` is a complete, deployable
+// folder (on Hostinger the subdomain docroot is `dist`). Runs AFTER Vite empties
+// and writes dist, so `dist/api/` is always present after every build and never
+// wiped. Source of truth stays at the project root `api/`.
+function copyPhpApi() {
+  return {
+    name: 'copy-php-api',
+    apply: 'build',
+    closeBundle() {
+      cpSync(resolve(process.cwd(), 'api'), resolve(process.cwd(), 'dist', 'api'), {
+        recursive: true,
+      })
+      console.log('\n✓ Copied api/ → dist/api/')
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,6 +35,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    copyPhpApi(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'favicon-32x32.png', 'favicon-48x48.png', 'pwa-192x192.png', 'pwa-512x512.png'],
