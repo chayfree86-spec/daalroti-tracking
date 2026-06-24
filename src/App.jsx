@@ -101,8 +101,8 @@ function App() {
 
   // Create or update an entry DIRECTLY in the database (no local persistence).
   const addEntry = async (entry) => {
-    const wasEdit = !!editingEntry;
-    const id = wasEdit ? editingEntry.id : entry.id;
+    const wasEdit = !!editingEntry || entries.some(e => e.id === entry.id);
+    const id = entry.id;
     setIsSyncing(true);
     try {
       if (wasEdit) {
@@ -122,7 +122,7 @@ function App() {
       setAppAlert({ show: true, type: 'error', title: 'Save Failed!', message: 'Database mein save nahi hua. Server connection check karein.' });
     } finally {
       setIsSyncing(false);
-      if (wasEdit) setEditingEntry(null);
+      if (editingEntry) setEditingEntry(null);
     }
   };
 

@@ -16,6 +16,9 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
     spendRemark: 'Spend',
   });
 
+  const [existingIncomeId, setExistingIncomeId] = useState(null);
+  const [existingSpendId, setExistingSpendId] = useState(null);
+
   const [activeSuggestionField, setActiveSuggestionField] = useState(null);
   const uniqueRemarks = Array.from(new Set(entries.map(e => e.remark).filter(Boolean)));
 
@@ -30,18 +33,30 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
         incomeRemark: editData.incomeRemark || editData.remark || 'Income',
         spendRemark: editData.spendRemark || editData.remark || 'Spend',
       });
+      if (Number(editData.cashIncome || 0) > 0 || Number(editData.onlineIncome || 0) > 0) {
+        setExistingIncomeId(editData.id);
+        setExistingSpendId(null);
+      } else {
+        setExistingSpendId(editData.id);
+        setExistingIncomeId(null);
+      }
     } else {
-      setFormData({
-        date: todayIST(),
-        cashIncome: '',
-        onlineIncome: '',
-        cashSpend: '',
-        onlineSpend: '',
-        incomeRemark: 'Income',
-        spendRemark: 'Spend',
-      });
+      const existingIncome = entries.find(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
+      const existingSpend = entries.find(e => e.date === formData.date && (Number(e.cashSpend || 0) > 0 || Number(e.onlineSpend || 0) > 0));
+
+      setFormData(prev => ({
+        ...prev,
+        cashIncome: existingIncome ? String(existingIncome.cashIncome || '') : '',
+        onlineIncome: existingIncome ? String(existingIncome.onlineIncome || '') : '',
+        incomeRemark: existingIncome ? (existingIncome.remark || 'Income') : 'Income',
+        cashSpend: existingSpend ? String(existingSpend.cashSpend || '') : '',
+        onlineSpend: existingSpend ? String(existingSpend.onlineSpend || '') : '',
+        spendRemark: existingSpend ? (existingSpend.remark || 'Spend') : 'Spend',
+      }));
+      setExistingIncomeId(existingIncome ? existingIncome.id : null);
+      setExistingSpendId(existingSpend ? existingSpend.id : null);
     }
-  }, [editData]);
+  }, [editData, formData.date, entries]);
 
   const changeDate = (days) => {
     // Parse as local midnight (NOT UTC) so day arithmetic never shifts by a day.
@@ -110,7 +125,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       cashSpend: '',
       onlineSpend: '',
       remark: toTitleCase(formData.incomeRemark.trim()) || 'Income',
-      id: Date.now(),
+      id: existingIncomeId || Date.now(),
       timestamp: nowIST(),
     };
     onSave(entry);
@@ -142,7 +157,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       cashSpend: formData.cashSpend,
       onlineSpend: formData.onlineSpend,
       remark: toTitleCase(formData.spendRemark.trim()) || 'Spend',
-      id: Date.now(),
+      id: existingSpendId || Date.now(),
       timestamp: nowIST(),
     };
     onSave(entry);
@@ -227,7 +242,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                 </label>
                 <input
                   ref={cashIncomeRef}
-                  autoFocus
+                  autoFocus={!!(editData && (editData.cashIncome || editData.onlineIncome))}
                   type="number"
                   name="cashIncome"
                   value={formData.cashIncome}
@@ -356,6 +371,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
                   </label>
                   <input
                     ref={onlineSpendRef}
+                    autoFocus={!editData || !!(editData.cashSpend || editData.onlineSpend)}
                     type="number"
                     name="onlineSpend"
                     value={formData.onlineSpend}
