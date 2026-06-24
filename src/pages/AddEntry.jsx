@@ -42,19 +42,18 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       }
     } else {
       const existingIncome = entries.find(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
-      const existingSpend = entries.find(e => e.date === formData.date && (Number(e.cashSpend || 0) > 0 || Number(e.onlineSpend || 0) > 0));
 
       setFormData(prev => ({
         ...prev,
         cashIncome: existingIncome ? String(existingIncome.cashIncome || '') : '',
         onlineIncome: existingIncome ? String(existingIncome.onlineIncome || '') : '',
         incomeRemark: existingIncome ? (existingIncome.remark || 'Income') : 'Income',
-        cashSpend: existingSpend ? String(existingSpend.cashSpend || '') : '',
-        onlineSpend: existingSpend ? String(existingSpend.onlineSpend || '') : '',
-        spendRemark: existingSpend ? (existingSpend.remark || 'Spend') : 'Spend',
+        cashSpend: '',
+        onlineSpend: '',
+        spendRemark: 'Spend',
       }));
       setExistingIncomeId(existingIncome ? existingIncome.id : null);
-      setExistingSpendId(existingSpend ? existingSpend.id : null);
+      setExistingSpendId(null);
     }
   }, [editData, formData.date, entries]);
 
