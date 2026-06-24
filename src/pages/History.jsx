@@ -289,9 +289,7 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
             : "shadow-premium",
           entry.isVirtual
             ? "bg-slate-50/50 border-slate-100 opacity-60"
-            : !isDetail && (isPositive 
-                ? "bg-income/[0.02] border-slate-100 group hover:bg-income/[0.05] hover:border-income/30 hover:shadow-md cursor-default" 
-                : "bg-spend/[0.02] border-slate-100 group hover:bg-spend/[0.05] hover:border-spend/30 hover:shadow-md cursor-default"),
+            : !isDetail && "bg-white border-slate-50 group hover:border-primary/40 hover:bg-slate-50 hover:shadow-md cursor-default",
           highlightedEntryId === entry.id && "bg-amber-50 border-amber-200 ring-2 ring-primary/20 scale-[1.02] shadow-2xl z-10"
         )}
       >
@@ -413,13 +411,8 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
         onClick={() => toggleDate(group.date)}
         className={cn(
           "w-full text-left px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all duration-300",
-          isPositive
-            ? (expanded 
-                ? "bg-income/[0.04] border-income/30 ring-1 ring-income/10" 
-                : "bg-income/[0.02] border-slate-100 hover:bg-income/[0.05] hover:border-income/30 hover:shadow-md cursor-pointer")
-            : (expanded 
-                ? "bg-spend/[0.04] border-spend/30 ring-1 ring-spend/10" 
-                : "bg-spend/[0.02] border-slate-100 hover:bg-spend/[0.05] hover:border-spend/30 hover:shadow-md cursor-pointer")
+          "bg-white border-slate-50 hover:border-primary/40 hover:bg-slate-50 hover:shadow-md cursor-pointer",
+          expanded && "border-primary/30 bg-primary/[0.03] ring-1 ring-primary/10"
         )}
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
