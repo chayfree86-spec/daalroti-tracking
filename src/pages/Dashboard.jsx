@@ -321,7 +321,12 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
                   <div 
                     key={entry.id} 
                     onClick={() => onEntryClick(entry.id)}
-                    className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 transition-all hover:scale-[1.01] cursor-pointer active:scale-95 group"
+                    className={cn(
+                      "p-6 rounded-[2.5rem] shadow-premium border transition-all hover:scale-[1.01] cursor-pointer active:scale-95 group border-l-4",
+                      isPositive 
+                        ? "bg-income/[0.02] border-slate-100 border-l-income hover:bg-income/[0.05]" 
+                        : "bg-spend/[0.02] border-slate-100 border-l-spend hover:bg-spend/[0.05]"
+                    )}
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
