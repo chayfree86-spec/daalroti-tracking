@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn, formatDate, toTitleCase, todayIST, nowIST } from '../lib/utils';
+import { cn, formatDate, toTitleCase, todayIST, nowIST, formatCurrency } from '../lib/utils';
 import CustomCalendar from '../components/CustomCalendar';
 import CustomAlert from '../components/CustomAlert';
 
@@ -21,6 +21,17 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
 
   const [activeSuggestionField, setActiveSuggestionField] = useState(null);
   const uniqueRemarks = Array.from(new Set(entries.map(e => e.remark).filter(Boolean)));
+
+  const selectedMonthStr = formData.date.slice(0, 7);
+  const monthName = new Date(formData.date + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short' });
+
+  const totalIncomeForMonth = entries
+    .filter(e => e.date && e.date.startsWith(selectedMonthStr))
+    .reduce((sum, e) => sum + Number(e.cashIncome || 0) + Number(e.onlineIncome || 0), 0);
+
+  const totalSpendForMonth = entries
+    .filter(e => e.date && e.date.startsWith(selectedMonthStr))
+    .reduce((sum, e) => sum + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
 
   useEffect(() => {
     if (editData) {
@@ -230,7 +241,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
               <div className="w-12 h-12 rounded-2xl bg-income/10 text-income flex items-center justify-center">
                 <Save size={24} />
               </div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">Income Details</h2>
+              <div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Income Details</h2>
+                <p className="text-[10px] font-black text-income mt-0.5 uppercase tracking-wider">
+                  {monthName} Total: +{formatCurrency(totalIncomeForMonth)}
+                </p>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -339,7 +355,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
               <div className="w-12 h-12 rounded-2xl bg-spend/10 text-spend flex items-center justify-center">
                 <Save size={24} className="rotate-180" />
               </div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">Spend Details</h2>
+              <div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Spend Details</h2>
+                <p className="text-[10px] font-black text-spend mt-0.5 uppercase tracking-wider">
+                  {monthName} Total: -{formatCurrency(totalSpendForMonth)}
+                </p>
+              </div>
             </div>
             
             <div className="space-y-6">
