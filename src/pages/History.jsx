@@ -153,6 +153,8 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
           entries: [],
           cashDelta: 0,
           onlineDelta: 0,
+          income: 0,
+          expense: 0,
           runningTotal: entry.runningTotal, // latest entry of the day (first seen)
           isVirtual: !!entry.isVirtual,
         });
@@ -162,6 +164,8 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
       g.entries.push(entry);
       g.cashDelta += (entry.cashDelta || 0);
       g.onlineDelta += (entry.onlineDelta || 0);
+      g.income += Number(entry.cashIncome || 0) + Number(entry.onlineIncome || 0);
+      g.expense += Number(entry.cashSpend || 0) + Number(entry.onlineSpend || 0);
     }
     return order.map(d => map.get(d));
   })();
@@ -266,6 +270,11 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
     const totalDelta = (entry.cashDelta || 0) + (entry.onlineDelta || 0);
     const isPositive = totalDelta >= 0;
     const isTuesday = new Date(entry.date + 'T00:00:00').getDay() === 2;
+    const income = Number(entry.cashIncome || 0) + Number(entry.onlineIncome || 0);
+    const expense = Number(entry.cashSpend || 0) + Number(entry.onlineSpend || 0);
+    // Cash vs Online amount for this transaction (so the channel split stays visible).
+    const cashAmt = Number(entry.cashIncome || 0) + Number(entry.cashSpend || 0);
+    const onlineAmt = Number(entry.onlineIncome || 0) + Number(entry.onlineSpend || 0);
 
     return (
       <div
@@ -307,43 +316,51 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
             </div>
           </div>
 
-          {/* Description */}
-          <div className="col-span-1 md:col-span-2">
+          {/* Description (+ cash / online split so the channel amounts are visible) */}
+          <div className="col-span-1 md:col-span-2 min-w-0">
             <p className="text-sm font-bold text-slate-600 truncate">
               {entry.remark || (isPositive ? 'Income' : 'Spend')}
             </p>
+            {!entry.isVirtual && (cashAmt > 0 || onlineAmt > 0) && (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {cashAmt > 0 && (
+                  <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                    <Wallet size={9} /> {formatCurrency(cashAmt)}
+                  </span>
+                )}
+                {onlineAmt > 0 && (
+                  <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                    <Smartphone size={9} /> {formatCurrency(onlineAmt)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Cash */}
+          {/* Income */}
           <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
             <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
-              <p className={cn(
-                "text-sm font-black tracking-tight",
-                entry.cashDelta > 0 ? "text-amber-500" : entry.cashDelta < 0 ? "text-spend" : "text-slate-300"
-              )}>
-                {entry.cashDelta !== 0 ? (entry.cashDelta > 0 ? '+' : '') + formatCurrency(entry.cashDelta) : '-'}
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Income</span>
+              <p className={cn("text-sm font-black tracking-tight", income > 0 ? "text-income" : "text-slate-300")}>
+                {income > 0 ? '+' + formatCurrency(income) : '-'}
               </p>
             </div>
           </div>
 
-          {/* Online */}
+          {/* Expense */}
           <div className="col-span-1 md:col-span-2 md:text-right">
             <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Online</span>
-              <p className={cn(
-                "text-sm font-black tracking-tight",
-                entry.onlineDelta > 0 ? "text-income/70" : entry.onlineDelta < 0 ? "text-spend" : "text-slate-300"
-              )}>
-                {entry.onlineDelta !== 0 ? (entry.onlineDelta > 0 ? '+' : '') + formatCurrency(entry.onlineDelta) : '-'}
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Expense</span>
+              <p className={cn("text-sm font-black tracking-tight", expense > 0 ? "text-spend" : "text-slate-300")}>
+                {expense > 0 ? '-' + formatCurrency(expense) : '-'}
               </p>
             </div>
           </div>
 
-          {/* Total */}
+          {/* Net (Income - Expense) */}
           <div className="col-span-1 md:col-span-2 md:text-right">
             <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Total</span>
+              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Net</span>
               <p className={cn(
                 "text-sm font-black tracking-tight",
                 totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300"
@@ -422,30 +439,30 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
             </span>
           </div>
 
-          {/* Combined Cash */}
+          {/* Total Income */}
           <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
             <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
-              <p className={cn("text-sm font-black tracking-tight", group.cashDelta > 0 ? "text-amber-500" : group.cashDelta < 0 ? "text-spend" : "text-slate-300")}>
-                {group.cashDelta !== 0 ? (group.cashDelta > 0 ? '+' : '') + formatCurrency(group.cashDelta) : '-'}
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Income</span>
+              <p className={cn("text-sm font-black tracking-tight", group.income > 0 ? "text-income" : "text-slate-300")}>
+                {group.income > 0 ? '+' + formatCurrency(group.income) : '-'}
               </p>
             </div>
           </div>
 
-          {/* Combined Online */}
+          {/* Total Expense */}
           <div className="col-span-1 md:col-span-2 md:text-right">
             <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Online</span>
-              <p className={cn("text-sm font-black tracking-tight", group.onlineDelta > 0 ? "text-income/70" : group.onlineDelta < 0 ? "text-spend" : "text-slate-300")}>
-                {group.onlineDelta !== 0 ? (group.onlineDelta > 0 ? '+' : '') + formatCurrency(group.onlineDelta) : '-'}
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Expense</span>
+              <p className={cn("text-sm font-black tracking-tight", group.expense > 0 ? "text-spend" : "text-slate-300")}>
+                {group.expense > 0 ? '-' + formatCurrency(group.expense) : '-'}
               </p>
             </div>
           </div>
 
-          {/* Combined Total */}
+          {/* Net (Income - Expense) */}
           <div className="col-span-1 md:col-span-2 md:text-right">
             <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Total</span>
+              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Net</span>
               <p className={cn("text-sm font-black tracking-tight", totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300")}>
                 {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
               </p>
@@ -627,9 +644,9 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
         <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50 rounded-2xl border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
           <div className="col-span-2">Date</div>
           <div className="col-span-2">Description</div>
-          <div className="col-span-2 text-right">Cash</div>
-          <div className="col-span-2 text-right">Online</div>
-          <div className="col-span-2 text-right">Total</div>
+          <div className="col-span-2 text-right">Income</div>
+          <div className="col-span-2 text-right">Expense</div>
+          <div className="col-span-2 text-right">Net</div>
           <div className="col-span-1 text-right">Balance</div>
           <div className="col-span-1"></div>
         </div>
