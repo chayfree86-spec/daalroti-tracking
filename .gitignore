@@ -10,10 +10,12 @@ lerna-debug.log*
 node_modules
 *.local
 
-# Live DB credentials — keep out of git; copy api/config.sample.php to
-# api/config.php locally and fill real creds (the build copies it into dist/api/).
+# dist/ is COMMITTED so Hostinger git-deploy (docroot = dist/) gets the build.
+# But DB credentials must NEVER go to git — server par config.php set rehta hai
+# aur git pull use chhuega nahi (ignored). Build creds ko dist/api/config.php me
+# copy karta hai (local), par woh commit nahi hoga.
 api/config.php
-dist
+dist/api/config.php
 
 # Editor directories and files
 .vscode/*
