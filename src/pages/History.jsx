@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet } from 'lucide-react';
+import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet, ChevronDown, Layers } from 'lucide-react';
 import { formatCurrency, formatDate, cn, numberToWords, todayIST } from '../lib/utils';
 
 const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlightedEntryId, syncStatus }) => {
@@ -8,6 +8,15 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   const [filterMonth, setFilterMonth] = useState(currentMonthStr);
   const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'spend'
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+  const [expandedDates, setExpandedDates] = useState(() => new Set()); // dates expanded to show their entries
+
+  const toggleDate = (date) => {
+    setExpandedDates(prev => {
+      const next = new Set(prev);
+      next.has(date) ? next.delete(date) : next.add(date);
+      return next;
+    });
+  };
 
   // Sort and Calculate Running Balances before filtering to keep consistency
   const sortedEntries = [...entries].sort((a, b) => {
@@ -130,6 +139,33 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
     });
   })();
 
+  // Group display entries by date. Each group is one combined row; clicking it
+  // expands to show that day's individual entries. finalDisplayEntries is already
+  // sorted (date desc, id desc), so the first entry per date is the day's latest
+  // and its runningTotal = the day's closing balance.
+  const groupedByDate = (() => {
+    const map = new Map();
+    const order = [];
+    for (const entry of finalDisplayEntries) {
+      if (!map.has(entry.date)) {
+        map.set(entry.date, {
+          date: entry.date,
+          entries: [],
+          cashDelta: 0,
+          onlineDelta: 0,
+          runningTotal: entry.runningTotal, // latest entry of the day (first seen)
+          isVirtual: !!entry.isVirtual,
+        });
+        order.push(entry.date);
+      }
+      const g = map.get(entry.date);
+      g.entries.push(entry);
+      g.cashDelta += (entry.cashDelta || 0);
+      g.onlineDelta += (entry.onlineDelta || 0);
+    }
+    return order.map(d => map.get(d));
+  })();
+
   // Calculate Summary for the filtered period
   const periodCashSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0), 0));
   const periodOnlineSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
@@ -144,7 +180,10 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
         if (entryMonth !== filterMonth) {
           setFilterMonth(entryMonth);
         }
-        
+
+        // Make sure the day's group is expanded so the entry is visible.
+        setExpandedDates(prev => prev.has(entry.date) ? prev : new Set(prev).add(entry.date));
+
         // Use a small timeout to ensure DOM is updated after potential filter change
         const timer = setTimeout(() => {
           const element = document.getElementById(`entry-${highlightedEntryId}`);
@@ -215,6 +254,222 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
       )}
     </div>
   );
+
+  // Time part of a timestamp like "17/06/2026, 22:57:53" -> "22:57"
+  const timePart = (ts) => {
+    const m = String(ts || '').match(/(\d{1,2}:\d{2})(:\d{2})?/);
+    return m ? m[1] : '';
+  };
+
+  // Render a single entry row. `isDetail` = it's shown inside an expanded day group.
+  const renderEntryRow = (entry, isDetail = false) => {
+    const totalDelta = (entry.cashDelta || 0) + (entry.onlineDelta || 0);
+    const isPositive = totalDelta >= 0;
+    const isTuesday = new Date(entry.date + 'T00:00:00').getDay() === 2;
+
+    return (
+      <div
+        key={entry.id}
+        id={`entry-${entry.id}`}
+        className={cn(
+          "px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] border transition-all duration-700",
+          isDetail
+            ? "bg-white border-slate-100 ml-3 md:ml-8 shadow-sm"
+            : "shadow-premium",
+          entry.isVirtual
+            ? "bg-slate-50/50 border-slate-100 opacity-60"
+            : !isDetail && "bg-white border-slate-50 group hover:border-primary/40 hover:bg-slate-50 hover:shadow-md cursor-default",
+          highlightedEntryId === entry.id && "bg-amber-50 border-amber-200 ring-2 ring-primary/20 scale-[1.02] shadow-2xl z-10"
+        )}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          {/* Date / time & icon */}
+          <div className="col-span-1 md:col-span-2 flex items-center gap-3">
+            <div className={cn(
+              "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
+              entry.isVirtual ? "bg-slate-200 text-slate-400" : (isPositive ? "bg-income/5 text-income/60" : "bg-spend/10 text-spend")
+            )}>
+              {entry.isVirtual ? <Calendar size={16} /> : (isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />)}
+            </div>
+            <div className="flex flex-col">
+              {isDetail ? (
+                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">
+                  {timePart(entry.timestamp) || 'Entry'}
+                </span>
+              ) : (
+                <span className="text-xs font-bold text-slate-400 whitespace-nowrap">{formatDate(entry.date)}</span>
+              )}
+              {!isDetail && isTuesday && (
+                <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
+                  Shop Closed
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="col-span-1 md:col-span-2">
+            <p className="text-sm font-bold text-slate-600 truncate">
+              {entry.remark || (isPositive ? 'Income' : 'Spend')}
+            </p>
+          </div>
+
+          {/* Cash */}
+          <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
+              <p className={cn(
+                "text-sm font-black tracking-tight",
+                entry.cashDelta > 0 ? "text-amber-500" : entry.cashDelta < 0 ? "text-spend" : "text-slate-300"
+              )}>
+                {entry.cashDelta !== 0 ? (entry.cashDelta > 0 ? '+' : '') + formatCurrency(entry.cashDelta) : '-'}
+              </p>
+            </div>
+          </div>
+
+          {/* Online */}
+          <div className="col-span-1 md:col-span-2 md:text-right">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Online</span>
+              <p className={cn(
+                "text-sm font-black tracking-tight",
+                entry.onlineDelta > 0 ? "text-income/70" : entry.onlineDelta < 0 ? "text-spend" : "text-slate-300"
+              )}>
+                {entry.onlineDelta !== 0 ? (entry.onlineDelta > 0 ? '+' : '') + formatCurrency(entry.onlineDelta) : '-'}
+              </p>
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="col-span-1 md:col-span-2 md:text-right">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Total</span>
+              <p className={cn(
+                "text-sm font-black tracking-tight",
+                totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300"
+              )}>
+                {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
+              </p>
+            </div>
+          </div>
+
+          {/* Balance */}
+          <div className="col-span-1 md:col-span-1 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
+              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">{isDetail ? 'After' : 'Closing'}</span>
+              <p className="text-xs font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="col-span-1 md:col-span-1 flex justify-end gap-2">
+            {!entry.isVirtual && (
+              <>
+                <button onClick={() => onEdit(entry)} className="p-2 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-xl">
+                  <Edit3 size={16} />
+                </button>
+                <button onClick={() => onDelete(entry.id)} className="p-2 text-slate-200 hover:text-spend transition-colors hover:bg-spend/5 rounded-xl">
+                  <Trash2 size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render the combined summary row for a day with multiple entries.
+  const renderGroupRow = (group, expanded) => {
+    const totalDelta = group.cashDelta + group.onlineDelta;
+    const isPositive = totalDelta >= 0;
+    const isTuesday = new Date(group.date + 'T00:00:00').getDay() === 2;
+    const count = group.entries.length;
+
+    return (
+      <button
+        type="button"
+        onClick={() => toggleDate(group.date)}
+        className={cn(
+          "w-full text-left px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all duration-300",
+          "bg-white border-slate-50 hover:border-primary/40 hover:bg-slate-50 hover:shadow-md cursor-pointer",
+          expanded && "border-primary/30 bg-primary/[0.03] ring-1 ring-primary/10"
+        )}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          {/* Date & expand icon */}
+          <div className="col-span-1 md:col-span-2 flex items-center gap-3">
+            <div className={cn(
+              "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform",
+              isPositive ? "bg-income/5 text-income/70" : "bg-spend/10 text-spend"
+            )}>
+              <ChevronDown size={16} className={cn("transition-transform duration-300", expanded && "rotate-180")} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{formatDate(group.date)}</span>
+              {isTuesday && (
+                <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
+                  Shop Closed
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Description = entry count */}
+          <div className="col-span-1 md:col-span-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
+              <Layers size={12} /> {count} entries
+            </span>
+          </div>
+
+          {/* Combined Cash */}
+          <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
+              <p className={cn("text-sm font-black tracking-tight", group.cashDelta > 0 ? "text-amber-500" : group.cashDelta < 0 ? "text-spend" : "text-slate-300")}>
+                {group.cashDelta !== 0 ? (group.cashDelta > 0 ? '+' : '') + formatCurrency(group.cashDelta) : '-'}
+              </p>
+            </div>
+          </div>
+
+          {/* Combined Online */}
+          <div className="col-span-1 md:col-span-2 md:text-right">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Online</span>
+              <p className={cn("text-sm font-black tracking-tight", group.onlineDelta > 0 ? "text-income/70" : group.onlineDelta < 0 ? "text-spend" : "text-slate-300")}>
+                {group.onlineDelta !== 0 ? (group.onlineDelta > 0 ? '+' : '') + formatCurrency(group.onlineDelta) : '-'}
+              </p>
+            </div>
+          </div>
+
+          {/* Combined Total */}
+          <div className="col-span-1 md:col-span-2 md:text-right">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
+              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Total</span>
+              <p className={cn("text-sm font-black tracking-tight", totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300")}>
+                {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
+              </p>
+            </div>
+          </div>
+
+          {/* Closing balance */}
+          <div className="col-span-1 md:col-span-1 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
+            <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
+              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Closing</span>
+              <p className="text-xs font-black text-slate-800">{formatCurrency(group.runningTotal)}</p>
+            </div>
+          </div>
+
+          {/* Hint */}
+          <div className="hidden md:flex col-span-1 justify-end">
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">
+              {expanded ? 'Hide' : 'View'}
+            </span>
+          </div>
+        </div>
+      </button>
+    );
+  };
 
   return (
     <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl">
@@ -388,116 +643,21 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
               <p className="text-slate-400 font-black uppercase text-sm tracking-widest">No matching records found</p>
             </div>
           ) : (
-            finalDisplayEntries.map((entry) => {
-              const totalDelta = (entry.cashDelta || 0) + (entry.onlineDelta || 0);
-              const isPositive = totalDelta >= 0;
-              const isTuesday = new Date(entry.date + 'T00:00:00').getDay() === 2;
-
+            groupedByDate.map((group) => {
+              // Single-entry day (or a virtual "Shop Closed" row) — show directly.
+              if (group.entries.length === 1) {
+                return renderEntryRow(group.entries[0]);
+              }
+              // Multi-entry day — one combined row that expands to show entries.
+              const expanded = expandedDates.has(group.date);
               return (
-                <div 
-                  key={entry.id} 
-                  id={`entry-${entry.id}`}
-                  className={cn(
-                    "px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all duration-700",
-                    entry.isVirtual ? "bg-slate-50/50 border-slate-100 opacity-60" : "bg-white border-slate-50 group hover:border-primary/40 hover:bg-slate-50 hover:shadow-md hover:scale-[1.01] cursor-default",
-                    highlightedEntryId === entry.id && "bg-amber-50 border-amber-200 ring-2 ring-primary/20 scale-[1.02] shadow-2xl z-10"
+                <div key={group.date} className="space-y-2">
+                  {renderGroupRow(group, expanded)}
+                  {expanded && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {group.entries.map((e) => renderEntryRow(e, true))}
+                    </div>
                   )}
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    
-                    {/* Date & Icon */}
-                    <div className="col-span-1 md:col-span-2 flex items-center gap-3">
-                      <div className={cn(
-                          "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
-                          entry.isVirtual ? "bg-slate-200 text-slate-400" : (isPositive ? "bg-income/5 text-income/60" : "bg-spend/10 text-spend")
-                      )}>
-                        {entry.isVirtual ? <Calendar size={16} /> : (isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />)}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-400 whitespace-nowrap">{formatDate(entry.date)}</span>
-                        {isTuesday && (
-                          <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
-                            Shop Closed
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="col-span-1 md:col-span-2">
-                      <p className="text-sm font-bold text-slate-600 truncate">
-                        {entry.remark || (isPositive ? 'Income' : 'Spend')}
-                      </p>
-                    </div>
-
-                    {/* Cash Amount */}
-                    <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
-                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-                        <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Cash</span>
-                        <p className={cn(
-                          "text-sm font-black tracking-tight",
-                          entry.cashDelta > 0 ? "text-amber-500" : entry.cashDelta < 0 ? "text-spend" : "text-slate-300"
-                        )}>
-                          {entry.cashDelta !== 0 ? (entry.cashDelta > 0 ? '+' : '') + formatCurrency(entry.cashDelta) : '-'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Online Amount */}
-                    <div className="col-span-1 md:col-span-2 md:text-right">
-                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-                        <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Online</span>
-                        <p className={cn(
-                          "text-sm font-black tracking-tight",
-                          entry.onlineDelta > 0 ? "text-income/70" : entry.onlineDelta < 0 ? "text-spend" : "text-slate-300"
-                        )}>
-                          {entry.onlineDelta !== 0 ? (entry.onlineDelta > 0 ? '+' : '') + formatCurrency(entry.onlineDelta) : '-'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Total (Cash + Online) */}
-                    <div className="col-span-1 md:col-span-2 md:text-right">
-                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-                        <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Total</span>
-                        <p className={cn(
-                          "text-sm font-black tracking-tight",
-                          totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300"
-                        )}>
-                          {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Closing Balance */}
-                    <div className="col-span-1 md:col-span-1 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
-                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
-                        <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Closing</span>
-                        <p className="text-xs font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
-                      </div>
-                    </div>
-
-                    {/* Action */}
-                    <div className="col-span-1 md:col-span-1 flex justify-end gap-2">
-                      {!entry.isVirtual && (
-                        <>
-                          <button 
-                            onClick={() => onEdit(entry)}
-                            className="p-2 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-xl"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button 
-                            onClick={() => onDelete(entry.id)}
-                            className="p-2 text-slate-200 hover:text-spend transition-colors hover:bg-spend/5 rounded-xl"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                  </div>
                 </div>
               );
             })
