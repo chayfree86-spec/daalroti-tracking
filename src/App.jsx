@@ -178,9 +178,9 @@ function App() {
       case 'dashboard':
         return <Dashboard entries={entries} setEntries={setEntries} setActiveTab={handleTabChange} onEntryClick={(id) => { setHighlightedEntryId(id); handleTabChange('reports'); }} {...commonProps} />;
       case 'add':
-        return <AddEntry 
-          entries={entries} 
-          editData={editingEntry} 
+        return <AddEntry
+          entries={entries}
+          editData={editingEntry}
           onSave={(entry) => {
             const wasEdit = !!editingEntry;
             // addEntry writes straight to the DB and shows its own success/error alert.
@@ -195,6 +195,8 @@ function App() {
             setTimeout(() => handleTabChange(returnTab), 100);
             setReturnTab('dashboard');
           }}
+          onEdit={handleEdit}
+          onDelete={deleteEntry}
         />;
       case 'reports':
         return <History

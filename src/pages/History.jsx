@@ -98,8 +98,9 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   // Inject Virtual Tuesdays
   const finalDisplayEntries = (() => {
     const result = [...filteredEntries];
-    // Show virtual Tuesdays if no search is active and a month is selected
-    if (searchTerm === '' && filterMonth) {
+    // Show virtual Tuesdays only in the unfiltered "all" view — they are neither
+    // income nor spend, so they must not appear when filtering by type.
+    if (searchTerm === '' && filterMonth && filterType === 'all') {
       const [year, month] = filterMonth.split('-').map(Number);
       const daysInMonth = new Date(year, month, 0).getDate();
       // "Today" in IST as a local-midnight Date, end-of-day, so future days are skipped correctly.

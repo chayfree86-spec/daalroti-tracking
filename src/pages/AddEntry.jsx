@@ -1,11 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Save, Wallet, Smartphone, MessageSquare, Calendar, ChevronLeft, ChevronRight, Edit3, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, formatDate, toTitleCase, todayIST, nowIST, formatCurrency } from '../lib/utils';
 import CustomCalendar from '../components/CustomCalendar';
 import CustomAlert from '../components/CustomAlert';
 
-const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
+// Time part of a timestamp like "17/06/2026, 22:57:53" -> "22:57"
+const timePart = (ts) => {
+  const m = String(ts || '').match(/(\d{1,2}:\d{2})(:\d{2})?/);
+  return m ? m[1] : '';
+};
+
+const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }) => {
   const [formData, setFormData] = useState({
     date: todayIST(),
     cashIncome: '',
@@ -18,6 +24,13 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
 
   const [existingIncomeId, setExistingIncomeId] = useState(null);
   const [existingSpendId, setExistingSpendId] = useState(null);
+
+  // Guards so a background `entries` refresh (multi-device sync) never wipes what
+  // the user is actively typing. `dirtyRef` = user has touched a field since the
+  // last (re)init; `prevDateRef`/`prevEditRef` detect a real context switch.
+  const dirtyRef = useRef(false);
+  const prevDateRef = useRef(null);
+  const prevEditRef = useRef(undefined);
 
   const [activeSuggestionField, setActiveSuggestionField] = useState(null);
   const uniqueRemarks = Array.from(new Set(entries.map(e => e.remark).filter(Boolean)));
@@ -33,7 +46,16 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
     .filter(e => e.date && e.date.startsWith(selectedMonthStr))
     .reduce((sum, e) => sum + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
 
+  // This date's individual transactions, split by type, for the lists below each card.
+  const dayIncomeEntries = entries.filter(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
+  const daySpendEntries = entries.filter(e => e.date === formData.date && (Number(e.cashSpend || 0) > 0 || Number(e.onlineSpend || 0) > 0));
+
   useEffect(() => {
+    const dateChanged = prevDateRef.current !== formData.date;
+    const editChanged = prevEditRef.current !== editData;
+    prevDateRef.current = formData.date;
+    prevEditRef.current = editData;
+
     if (editData) {
       setFormData({
         date: editData.date || todayIST(),
@@ -51,7 +73,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
         setExistingSpendId(editData.id);
         setExistingIncomeId(null);
       }
+      dirtyRef.current = false;
     } else {
+      // Re-init only on a real context switch (date/edit change) or while the form
+      // is still pristine — so a background sync never clobbers in-progress typing.
+      if (!dateChanged && !editChanged && dirtyRef.current) return;
+
       const existingIncome = entries.find(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
 
       setFormData(prev => ({
@@ -65,6 +92,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
       }));
       setExistingIncomeId(existingIncome ? existingIncome.id : null);
       setExistingSpendId(null);
+      dirtyRef.current = false;
     }
   }, [editData, formData.date, entries]);
 
@@ -94,6 +122,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    dirtyRef.current = true; // user is typing — protect from background-sync resets
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -112,6 +141,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
   };
 
   const selectSuggestion = (field, value) => {
+    dirtyRef.current = true;
     setFormData(prev => ({ ...prev, [field]: value }));
     setActiveSuggestionField(null);
   };
@@ -180,6 +210,76 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
     }));
   };
 
+  // List of this date's transactions of one type, shown below its card.
+  const renderDayList = (list, kind) => {
+    const isIncome = kind === 'income';
+    const emptyLabel = isIncome ? 'Is date ke liye koi income entry nahi hai' : 'Is date ke liye koi spend entry nahi hai';
+    return (
+      <div className="bg-white p-6 rounded-[2rem] shadow-premium border border-slate-50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {formatDate(formData.date)} · {isIncome ? 'Income' : 'Spend'} Entries
+          </h3>
+          <span className={cn(
+            "text-[10px] font-black px-2 py-1 rounded-lg",
+            isIncome ? "text-income bg-income/10" : "text-spend bg-spend/10"
+          )}>
+            {list.length}
+          </span>
+        </div>
+
+        {list.length === 0 ? (
+          <p className="text-xs font-bold text-slate-300 text-center py-6">{emptyLabel}</p>
+        ) : (
+          <div className="space-y-2">
+            {list.map((entry) => {
+              const cashAmt = Number(isIncome ? entry.cashIncome : entry.cashSpend) || 0;
+              const onlineAmt = Number(isIncome ? entry.onlineIncome : entry.onlineSpend) || 0;
+              const total = cashAmt + onlineAmt;
+              return (
+                <div key={entry.id} className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50/60 border border-slate-100">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-600 truncate">{entry.remark || (isIncome ? 'Income' : 'Spend')}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      {cashAmt > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                          <Wallet size={9} /> {formatCurrency(cashAmt)}
+                        </span>
+                      )}
+                      {onlineAmt > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                          <Smartphone size={9} /> {formatCurrency(onlineAmt)}
+                        </span>
+                      )}
+                      {timePart(entry.timestamp) && (
+                        <span className="text-[8px] font-bold text-slate-300">{timePart(entry.timestamp)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className={cn("text-sm font-black mr-1", isIncome ? "text-income" : "text-spend")}>
+                      {isIncome ? '+' : '-'}{formatCurrency(total)}
+                    </span>
+                    {onEdit && (
+                      <button type="button" onClick={() => onEdit(entry)} className="p-1.5 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-lg">
+                        <Edit3 size={14} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button type="button" onClick={() => onDelete(entry.id)} className="p-1.5 text-slate-200 hover:text-spend transition-colors hover:bg-spend/5 rounded-lg">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-6 pt-6 max-w-4xl">
       <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
@@ -235,7 +335,8 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
         (!editData) ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 max-w-2xl mx-auto"
       )}>
         {(!editData || (editData.cashIncome || editData.onlineIncome)) && (
-        <form onSubmit={handleSaveIncome} className="order-2 md:order-1 bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+        <div className="order-2 md:order-1 space-y-6">
+        <form onSubmit={handleSaveIncome} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-income/10 text-income flex items-center justify-center">
@@ -346,10 +447,13 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
             {editData ? 'Update Income' : 'Save Income'}
           </button>
         </form>
+        {renderDayList(dayIncomeEntries, 'income')}
+        </div>
         )}
 
         {(!editData || (editData.cashSpend || editData.onlineSpend)) && (
-        <form onSubmit={handleSaveSpend} className="order-1 md:order-2 bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
+        <div className="order-1 md:order-2 space-y-6">
+        <form onSubmit={handleSaveSpend} className="bg-white p-8 rounded-[3rem] shadow-premium border border-slate-50 flex flex-col justify-between min-h-[450px]">
           <div className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-spend/10 text-spend flex items-center justify-center">
@@ -462,6 +566,8 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [] }) => {
             {editData ? 'Update Spend' : 'Save Spend'}
           </button>
         </form>
+        {renderDayList(daySpendEntries, 'spend')}
+        </div>
         )}
       </div>
 

@@ -137,7 +137,10 @@ const Analytics = ({ entries, syncStatus }) => {
     return `₹${val}`;
   };
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    // Parse "YYYY-MM-DD" as local (device = IST) midnight, not UTC, so the day never shifts.
+    const s = String(dateStr);
+    const d = s.length === 10 ? new Date(s + 'T00:00:00') : new Date(s);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
   const CustomDropdown = ({ value, options, onChange, label }) => {

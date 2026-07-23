@@ -310,7 +310,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
 
             {dashboardTransactions.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
-                <p className="text-slate-400 font-bold">No entries for {months[selectedMonth - 1]} {selectedYear}</p>
+                <p className="text-slate-400 font-bold">No entries for {selectedMonth === 'all' ? 'All Months' : months[selectedMonth - 1]} {selectedYear}</p>
               </div>
             ) : (
               dashboardTransactions.slice(0, 4).map((entry) => {
