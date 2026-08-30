@@ -5,9 +5,10 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply font-nunito bg-background text-slate-900 antialiased;
+  html, body {
+    @apply font-nunito bg-background text-slate-900 antialiased overflow-x-hidden;
     -webkit-tap-highlight-color: transparent;
+    max-width: 100vw;
   }
 
   /* Hide arrows in number inputs */

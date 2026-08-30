@@ -5,9 +5,10 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, TrendingDown, Landmark, Activity, ChevronDown, 
-  Smartphone, Wallet, Tag, ArrowUpRight, ArrowDownRight, Award 
+  Smartphone, Wallet, Tag, ArrowUpRight, ArrowDownRight, Award, ArrowRightLeft 
 } from 'lucide-react';
 import { formatCurrency, formatDate, cn, nowPartsIST } from '../lib/utils';
+import { ComparisonView } from '../components/ComparisonView';
 
 // Transparent modern colorful pastel palette for Categories
 const categoryPillStyles = [
@@ -76,6 +77,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
   const [selectedYear, setSelectedYear] = useState(ist.year);
   const [isAllTime, setIsAllTime] = useState(false);
   const [chartViewMode, setChartViewMode] = useState('weekly'); // 'weekly' or 'daily'
+  const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'comparison'
 
   // Core Data Processing & Stats Aggregation
   const stats = useMemo(() => {
@@ -299,12 +301,26 @@ const Analytics = ({ entries = [], syncStatus }) => {
     ? 'All Time' 
     : (selectedMonth === 'all' ? `Year ${selectedYear}` : `${months[selectedMonth - 1]} ${selectedYear}`);
 
+  if (viewMode === 'comparison') {
+    return (
+      <div className="container mx-auto px-3 sm:px-6 pb-8 max-w-5xl lg:max-w-6xl">
+        <ComparisonView 
+          onBack={() => {
+            setViewMode('overview');
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          }} 
+          entries={entries} 
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-3 sm:px-6 pb-8 max-w-5xl space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="container mx-auto px-3 sm:px-6 pb-8 max-w-5xl lg:max-w-6xl space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       
       {/* 1. Header with Month / Year Filters */}
-      <div className="sticky top-0 z-30 -mx-3 px-3 sm:-mx-6 sm:px-6 pt-2 pb-3 sm:pt-4 sm:pb-4 bg-background/90 backdrop-blur-md">
-        <header className="bg-white/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[52px] sm:min-h-[60px] transition-all">
+      <div className="sticky top-0 z-30 pt-2 pb-2 sm:pt-4 sm:pb-3 pointer-events-none">
+        <header className="bg-white/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div>
               <h1 className="text-sm sm:text-lg font-black text-slate-800 tracking-tight leading-tight">
@@ -317,6 +333,17 @@ const Analytics = ({ entries = [], syncStatus }) => {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              onClick={() => {
+                setViewMode('comparison');
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
+              className="hidden md:flex h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-primary/10 to-primary/20 hover:from-primary/20 hover:to-primary/30 border border-primary/30 text-primary transition-all items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
+              title="Compare 12-Month Performance"
+            >
+              <ArrowRightLeft size={13} className="text-primary shrink-0" />
+              <span>Compare Months</span>
+            </button>
             {!isAllTime && (
               <CustomDropdown 
                 value={selectedMonth}
@@ -352,6 +379,20 @@ const Analytics = ({ entries = [], syncStatus }) => {
         </header>
       </div>
 
+      {/* Mobile-Only Compare 12-Month Performance Button */}
+      <div className="block md:hidden -mt-2">
+        <button
+          onClick={() => {
+            setViewMode('comparison');
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          }}
+          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-primary to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
+        >
+          <ArrowRightLeft size={15} strokeWidth={2.5} />
+          <span>Compare 12-Month Performance</span>
+        </button>
+      </div>
+
       {/* 2. Executive 3-Card Summary Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         
@@ -373,24 +414,25 @@ const Analytics = ({ entries = [], syncStatus }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10">
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                <Wallet size={13} />
+          {/* Small Compact Cash + Online Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <Wallet size={12} className="sm:w-[13px] sm:h-[13px]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Cash In Hand</p>
-                <p className="text-xs sm:text-sm font-black text-amber-400 truncate">{formatCurrency(stats.cashBalance)}</p>
+                <p className="text-xs sm:text-sm font-black text-amber-400 whitespace-nowrap leading-tight">{formatCurrency(stats.cashBalance)}</p>
               </div>
             </div>
 
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                <Smartphone size={13} />
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <Smartphone size={12} className="sm:w-[13px] sm:h-[13px]" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Online / Bank</p>
-                <p className="text-xs sm:text-sm font-black text-emerald-400 truncate">{formatCurrency(stats.onlineBalance)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Online Bank</p>
+                <p className="text-xs sm:text-sm font-black text-emerald-400 whitespace-nowrap leading-tight">{formatCurrency(stats.onlineBalance)}</p>
               </div>
             </div>
           </div>
@@ -414,24 +456,24 @@ const Analytics = ({ entries = [], syncStatus }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
-                <Wallet size={13} />
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Wallet size={12} className="sm:w-[13px] sm:h-[13px]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Cash Income</p>
-                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(stats.cashIncome)}</p>
+                <p className="text-xs sm:text-sm font-black text-white whitespace-nowrap leading-tight">{formatCurrency(stats.cashIncome)}</p>
               </div>
             </div>
 
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
-                <Smartphone size={13} />
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Smartphone size={12} className="sm:w-[13px] sm:h-[13px]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Online Income</p>
-                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(stats.onlineIncome)}</p>
+                <p className="text-xs sm:text-sm font-black text-white whitespace-nowrap leading-tight">{formatCurrency(stats.onlineIncome)}</p>
               </div>
             </div>
           </div>
@@ -455,24 +497,24 @@ const Analytics = ({ entries = [], syncStatus }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
-                <Wallet size={13} />
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Wallet size={12} className="sm:w-[13px] sm:h-[13px]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Cash Spent</p>
-                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(stats.cashSpend)}</p>
+                <p className="text-xs sm:text-sm font-black text-white whitespace-nowrap leading-tight">{formatCurrency(stats.cashSpend)}</p>
               </div>
             </div>
 
-            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
-                <Smartphone size={13} />
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Smartphone size={12} className="sm:w-[13px] sm:h-[13px]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Online Spent</p>
-                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(stats.onlineSpend)}</p>
+                <p className="text-xs sm:text-sm font-black text-white whitespace-nowrap leading-tight">{formatCurrency(stats.onlineSpend)}</p>
               </div>
             </div>
           </div>

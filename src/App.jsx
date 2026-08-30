@@ -12,6 +12,7 @@ import { getApiUrl, fetchEntries, fetchRev, createEntry, updateEntry, removeEntr
 import { getCurrentUser } from './lib/auth';
 import { RefreshCw, Settings } from 'lucide-react';
 import { cn, normalizeEntry } from './lib/utils';
+import SteamBackground from './components/SteamBackground';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
@@ -264,7 +265,9 @@ function App() {
   };
 
   return (
-    <div className={cn("min-h-screen bg-background transition-all duration-300 pb-24")}>
+    <div className={cn("min-h-screen bg-background transition-all duration-300 pb-24 relative")}>
+      <SteamBackground />
+
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -272,6 +275,7 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
+          className="relative z-10"
         >
           {renderScreen()}
         </motion.div>

@@ -49,9 +49,55 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
   const prevEditRef = useRef(undefined);
 
   const [activeSuggestionField, setActiveSuggestionField] = useState(null);
-  const uniqueRemarks = Array.from(new Set(entries.map(e => e.remark).filter(Boolean)));
 
-  // Dynamic top & frequently used spend remarks computed from transaction history + user's core vendor list
+  // Sync merged category groups from localStorage
+  const [mergedCategoryGroups, setMergedCategoryGroups] = useState(() => {
+    try {
+      const saved = localStorage.getItem('daalroti_merged_categories');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        const saved = localStorage.getItem('daalroti_merged_categories');
+        setMergedCategoryGroups(saved ? JSON.parse(saved) : {});
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('category_merges_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('category_merges_updated', handleUpdate);
+    };
+  }, []);
+
+  const resolveCategory = React.useCallback((cat) => {
+    if (!cat) return '';
+    const trimmed = cat.trim();
+    return mergedCategoryGroups[trimmed] || trimmed;
+  }, [mergedCategoryGroups]);
+
+  // Unique suggestions list with finalized merged names
+  const uniqueRemarks = React.useMemo(() => {
+    const set = new Set();
+    entries.forEach(e => {
+      const raw = (e.remark || '').trim();
+      const resolved = resolveCategory(raw);
+      if (resolved) set.add(resolved);
+    });
+    Object.values(mergedCategoryGroups).forEach(primary => {
+      if (primary && typeof primary === 'string') set.add(primary.trim());
+    });
+    return Array.from(set);
+  }, [entries, mergedCategoryGroups, resolveCategory]);
+
+  // Dynamic top & frequently used spend remarks computed from transaction history + user's finalized categories
   const topSpendRemarks = React.useMemo(() => {
     const priorityDefaults = ['Ravikant Kirana', 'Amarchand Kirana', 'Trilokinath', 'Sip'];
     const counts = {};
@@ -59,10 +105,18 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
     entries.forEach(e => {
       // Check spend entries
       if (Number(e.cashSpend || 0) > 0 || Number(e.onlineSpend || 0) > 0 || e.cashDelta < 0 || e.onlineDelta < 0) {
-        const r = (e.remark || '').trim();
+        const raw = (e.remark || e.category || '').trim();
+        const r = resolveCategory(raw);
         if (r && r.toLowerCase() !== 'spend' && r.toLowerCase() !== 'income') {
           counts[r] = (counts[r] || 0) + 1;
         }
+      }
+    });
+
+    // Also include all final merged category names explicitly so new merges appear immediately
+    Object.values(mergedCategoryGroups).forEach(primary => {
+      if (primary && primary.toLowerCase() !== 'spend' && primary.toLowerCase() !== 'income') {
+        counts[primary] = (counts[primary] || 0) + 1;
       }
     });
 
@@ -73,16 +127,17 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
     const seen = new Set();
     const result = [];
 
-    // Core priority vendors
+    // Core priority vendors (resolved if merged)
     for (const item of priorityDefaults) {
-      const key = item.toLowerCase();
+      const resolvedItem = resolveCategory(item);
+      const key = resolvedItem.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
-        result.push(item);
+        result.push(resolvedItem);
       }
     }
 
-    // Top frequently used remarks from user's history
+    // Top frequently used remarks from user's history & merged groups
     for (const item of sortedFromHistory) {
       const key = item.toLowerCase();
       if (!seen.has(key)) {
@@ -91,8 +146,8 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
       }
     }
 
-    return result.slice(0, 8); // Top 8 most used chips
-  }, [entries]);
+    return result.slice(0, 10); // Top 10 most used chips
+  }, [entries, mergedCategoryGroups, resolveCategory]);
 
   // This date's individual transactions, split by type, for the lists below each card.
   const dayIncomeEntries = entries.filter(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
@@ -400,8 +455,8 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
   return (
     <div className="container mx-auto px-3 sm:px-6 pb-6 max-w-4xl">
       {/* Sticky Mobile-Touch Optimized Header */}
-      <div className="sticky top-0 z-30 -mx-3 px-3 sm:-mx-6 sm:px-6 pt-2 pb-3 sm:pt-4 sm:pb-4 bg-background/90 backdrop-blur-md">
-        <header className="bg-white/95 backdrop-blur-xl px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[52px] sm:min-h-[56px] transition-all">
+      <div className="sticky top-0 z-30 pt-2 pb-2 sm:pt-4 sm:pb-3 pointer-events-none">
+        <header className="bg-white/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div>
               <h1 className="text-sm sm:text-base font-black text-slate-800 tracking-tight leading-tight">

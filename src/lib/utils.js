@@ -6,11 +6,13 @@ export function cn(...inputs) {
 }
 
 export function formatCurrency(amount) {
+  const val = Number(amount);
+  const num = isNaN(val) ? 0 : val;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0
-  }).format(amount);
+  }).format(num);
 }
 
 export function formatDate(dateStr) {
