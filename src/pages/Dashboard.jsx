@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
+import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar, ChevronDown } from 'lucide-react';
 import { formatCurrency, formatDate, cn, numberToWords, nowPartsIST } from '../lib/utils';
 
 const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus }) => {
@@ -78,7 +78,9 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
   const monthCashIncome = filteredEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0), 0);
   const monthOnlineIncome = filteredEntries.reduce((acc, e) => acc + Number(e.onlineIncome || 0), 0);
   const monthIncome = monthCashIncome + monthOnlineIncome;
-  const monthSpend = filteredEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
+  const monthCashSpend = filteredEntries.reduce((acc, e) => acc + Number(e.cashSpend || 0), 0);
+  const monthOnlineSpend = filteredEntries.reduce((acc, e) => acc + Number(e.onlineSpend || 0), 0);
+  const monthSpend = monthCashSpend + monthOnlineSpend;
   
   // Closing Balance (Latest available balance in the range)
   const lastEntryOfRange = [...filteredEntries].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
@@ -138,18 +140,19 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border whitespace-nowrap",
-            isOpen ? "bg-white border-primary text-primary shadow-lg" : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
+            "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
+            isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
           )}
         >
-          {options.find(o => o.value === value)?.label || label}
+          <span>{options.find(o => o.value === value)?.label || label}</span>
+          <ChevronDown size={14} className={cn("transition-transform text-slate-400", isOpen && "rotate-180")} />
         </button>
         
         {isOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
-              <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[130px] animate-in fade-in zoom-in-95 duration-200">
+              <div className="max-h-60 overflow-y-auto no-scrollbar">
                 {options.map((opt) => (
                   <button
                     key={opt.value}
@@ -158,8 +161,8 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-colors",
-                      value === opt.value ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                      "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
+                      value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
                     )}
                   >
                     {opt.label}
@@ -174,20 +177,22 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
   };
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl">
-      <header className="flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 gap-6">
-          <div className="flex items-center gap-4">
+    <div className="container mx-auto px-3 sm:px-6 pb-6 max-w-5xl space-y-6 sm:space-y-8">
+      {/* Sticky Mobile-Touch Aligned Header */}
+      <div className="sticky top-0 z-30 -mx-3 px-3 sm:-mx-6 sm:px-6 pt-2 pb-3 sm:pt-4 sm:pb-4 bg-background/90 backdrop-blur-md">
+        <header className="bg-white/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[52px] sm:min-h-[60px] transition-all">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">DaalRoti <span className="text-primary">Tracker</span></h1>
-              <p className="text-slate-400 font-bold text-[10px] uppercase mt-0.5 tracking-wider">
+              <h1 className="text-sm sm:text-lg font-black text-slate-800 tracking-tight leading-tight">
+                DaalRoti <span className="text-primary">Tracker</span>
+              </h1>
+              <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider hidden sm:block">
                 Financial Overview
               </p>
             </div>
-            {syncStatus}
           </div>
           
-          <div className="flex items-center gap-3 self-end sm:self-auto">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {!isAllTime && (
               <CustomDropdown 
                 value={selectedMonth}
@@ -218,53 +223,141 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
               }}
               label="Year"
             />
+            {syncStatus}
+          </div>
+        </header>
+      </div>
+
+
+      {/* Main Dashboard Summary Cards (Unified 3-Card System) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        {/* 1. Main Balance Card */}
+        <div className="p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between group hover:scale-[1.01] transition-all">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/5 blur-xl pointer-events-none" />
+          
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
+                <Landmark size={18} className="text-amber-400" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/10 px-2.5 py-1 rounded-full text-slate-300">
+                Available Now
+              </span>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Closing Balance</h3>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              {formatCurrency(displayTotalBalance)}
+            </div>
+          </div>
+
+          {/* Small Compact Cash + Online Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Cash (In Hand)</p>
+                <p className="text-xs sm:text-sm font-black text-amber-400 truncate">{formatCurrency(displayCashBalance)}</p>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <Smartphone size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Online (Bank)</p>
+                <p className="text-xs sm:text-sm font-black text-emerald-400 truncate">{formatCurrency(displayOnlineBalance)}</p>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
 
+        {/* 2. Total Income Combined Card */}
+        <div className="p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-emerald-800 via-income to-emerald-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between group hover:scale-[1.01] transition-all">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                <ArrowUpRight size={18} className="text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-white/90">
+                {isAllTime ? 'All Time Income' : (selectedMonth === 'all' ? `${selectedYear} Income` : 'Monthly Income')}
+              </span>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-white/80">Total Income</h3>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              +{formatCurrency(monthIncome)}
+            </div>
+          </div>
 
-      {/* Main Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Main Balance Card */}
-        <div className="md:col-span-4">
-          <SummaryCard 
-            title="Closing Balance" 
-            amount={displayTotalBalance} 
-            icon={Landmark} 
-            gradient="bg-gradient-to-br from-slate-800 to-slate-950"
-            subtitle="Available Now"
-            hideWords={true}
-            footer={
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span>Cash: {formatCurrency(displayCashBalance)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-income" />
-                  <span>Online: {formatCurrency(displayOnlineBalance)}</span>
-                </div>
-              </>
-            }
-          />
+          {/* Small Compact Cash Income + Online Income Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Cash Income</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(monthCashIncome)}</p>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Smartphone size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Online Income</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(monthOnlineIncome)}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Income Breakdown */}
-        <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <SummaryCard 
-            title="Cash Income" 
-            amount={monthCashIncome} 
-            icon={Wallet} 
-            gradient="bg-gradient-to-br from-primary to-amber-600"
-            subtitle="Monthly Cash"
-          />
-          <SummaryCard 
-            title="Online Income" 
-            amount={monthOnlineIncome} 
-            icon={Smartphone} 
-            gradient="bg-gradient-to-br from-income to-emerald-600"
-            subtitle="Monthly Online"
-          />
+        {/* 3. Total Expense Combined Card */}
+        <div className="p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-rose-800 via-spend to-rose-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between group hover:scale-[1.01] transition-all">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                <ArrowDownRight size={18} className="text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-white/90">
+                {isAllTime ? 'All Time Spend' : (selectedMonth === 'all' ? `${selectedYear} Spend` : 'Monthly Spend')}
+              </span>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-white/80">Total Expense</h3>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              -{formatCurrency(monthSpend)}
+            </div>
+          </div>
+
+          {/* Small Compact Cash Spend + Online Spend Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Cash Spent</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(monthCashSpend)}</p>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Smartphone size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Online Spent</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(monthOnlineSpend)}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

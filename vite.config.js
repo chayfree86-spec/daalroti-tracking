@@ -26,10 +26,11 @@ export default defineConfig({
   base: './',
   server: {
     proxy: {
-      // Forward API calls to the Express + MySQL backend during dev.
+      // Forward API calls to the live Hostinger backend during dev.
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'https://daalrotirevenue.chaychaupal.com',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

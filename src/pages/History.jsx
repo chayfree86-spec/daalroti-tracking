@@ -172,8 +172,13 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   })();
 
   // Calculate Summary for the filtered period
+  const periodCashIncome = filteredEntries.reduce((acc, entry) => acc + (Number(entry.cashIncome) || 0), 0);
+  const periodOnlineIncome = filteredEntries.reduce((acc, entry) => acc + (Number(entry.onlineIncome) || 0), 0);
+  const periodTotalIncome = periodCashIncome + periodOnlineIncome;
+
   const periodCashSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0), 0));
   const periodOnlineSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
+  const periodTotalSpend = periodCashSpend + periodOnlineSpend;
   
   // Auto-scroll and highlight logic
   useEffect(() => {
@@ -266,140 +271,119 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
     return m ? m[1] : '';
   };
 
-  // Render a single entry row. `isDetail` = it's shown inside an expanded day group.
+  // Render a single entry row (standalone or nested inside a day group)
   const renderEntryRow = (entry, isDetail = false) => {
     const totalDelta = (entry.cashDelta || 0) + (entry.onlineDelta || 0);
     const isPositive = totalDelta >= 0;
     const isTuesday = new Date(entry.date + 'T00:00:00').getDay() === 2;
     const income = Number(entry.cashIncome || 0) + Number(entry.onlineIncome || 0);
     const expense = Number(entry.cashSpend || 0) + Number(entry.onlineSpend || 0);
-    // Cash vs Online amount for this transaction (so the channel split stays visible).
     const cashAmt = Number(entry.cashIncome || 0) + Number(entry.cashSpend || 0);
     const onlineAmt = Number(entry.onlineIncome || 0) + Number(entry.onlineSpend || 0);
+    const amount = income > 0 ? income : expense;
 
     return (
       <div
         key={entry.id}
         id={`entry-${entry.id}`}
         className={cn(
-          "px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] border transition-all duration-700",
+          "transition-all duration-300",
           isDetail
-            ? (isPositive 
-                ? "bg-income/[0.02] border-slate-100 ml-3 md:ml-8 shadow-sm" 
-                : "bg-spend/[0.02] border-slate-100 ml-3 md:ml-8 shadow-sm")
-            : "shadow-premium",
-          entry.isVirtual
-            ? "bg-slate-50/50 border-slate-100 opacity-60"
-            : !isDetail && "bg-white border-slate-50 group hover:border-primary/40 hover:bg-slate-50 hover:shadow-md cursor-default",
-          highlightedEntryId === entry.id && "bg-amber-50 border-amber-200 ring-2 ring-primary/20 scale-[1.02] shadow-2xl z-10"
+            ? "p-3 sm:p-4 rounded-xl bg-white border border-slate-100 shadow-xs hover:border-primary/30 flex items-center justify-between gap-3"
+            : "p-4 sm:px-6 sm:py-4 rounded-2xl md:rounded-[2rem] bg-white border border-slate-100 shadow-premium flex items-center justify-between gap-3",
+          entry.isVirtual && "bg-slate-50/70 border-dashed opacity-75",
+          highlightedEntryId === entry.id && "bg-amber-50 border-amber-300 ring-2 ring-primary/20 scale-[1.01] shadow-lg z-10"
         )}
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          {/* Date / time & icon */}
-          <div className="col-span-1 md:col-span-2 flex items-center gap-3">
-            <div className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
-              entry.isVirtual ? "bg-slate-200 text-slate-400" : (isPositive ? "bg-income/5 text-income/60" : "bg-spend/10 text-spend")
-            )}>
-              {entry.isVirtual ? <Calendar size={16} /> : (isPositive ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />)}
-            </div>
-            <div className="flex flex-col">
-              {isDetail ? (
-                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">
-                  {timePart(entry.timestamp) || 'Entry'}
+        {/* Left: Icon, Remark, Payment Mode Pill */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className={cn(
+            "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+            entry.isVirtual 
+              ? "bg-slate-100 text-slate-400" 
+              : (isPositive ? "bg-income/10 text-income" : "bg-spend/10 text-spend")
+          )}>
+            {entry.isVirtual ? <Calendar size={16} /> : (isPositive ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />)}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-xs sm:text-sm font-black text-slate-800 truncate">
+                {entry.remark || (entry.isVirtual ? 'Shop Closed (Tuesday)' : (isPositive ? 'Income' : 'Spend'))}
+              </p>
+              {!isDetail && !entry.isVirtual && (
+                <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
+                  · {formatDate(entry.date)}
                 </span>
-              ) : (
-                <span className="text-xs font-bold text-slate-400 whitespace-nowrap">{formatDate(entry.date)}</span>
               )}
-              {!isDetail && isTuesday && (
-                <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+              {!isDetail && (
+                <span className="text-[10px] font-bold text-slate-400 sm:hidden">
+                  {formatDate(entry.date)}
+                </span>
+              )}
+              {cashAmt > 0 && (
+                <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50">
+                  <Wallet size={10} /> Cash {formatCurrency(cashAmt)}
+                </span>
+              )}
+              {onlineAmt > 0 && (
+                <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/50">
+                  <Smartphone size={10} /> Online {formatCurrency(onlineAmt)}
+                </span>
+              )}
+              {isTuesday && !isDetail && (
+                <span className="text-[7px] font-black text-spend uppercase bg-spend/5 px-1.5 py-0.5 rounded border border-spend/10">
                   Shop Closed
                 </span>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Description (+ cash / online split so the channel amounts are visible) */}
-          <div className="col-span-1 md:col-span-2 min-w-0">
-            <p className="text-sm font-bold text-slate-600 truncate">
-              {entry.remark || (isPositive ? 'Income' : 'Spend')}
+        {/* Right: Amount & Actions */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="text-right">
+            <p className={cn("text-xs sm:text-sm font-black tracking-tight", isPositive ? "text-income" : "text-spend")}>
+              {entry.isVirtual ? '₹0' : (isPositive ? '+' : '-') + formatCurrency(amount)}
             </p>
-            {!entry.isVirtual && (cashAmt > 0 || onlineAmt > 0) && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {cashAmt > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                    <Wallet size={9} /> {formatCurrency(cashAmt)}
-                  </span>
-                )}
-                {onlineAmt > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                    <Smartphone size={9} /> {formatCurrency(onlineAmt)}
-                  </span>
-                )}
-              </div>
-            )}
+            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400">
+              Bal: {formatCurrency(entry.runningTotal)}
+            </p>
           </div>
 
-          {/* Income */}
-          <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Income</span>
-              <p className={cn("text-sm font-black tracking-tight", income > 0 ? "text-income" : "text-slate-300")}>
-                {income > 0 ? '+' + formatCurrency(income) : '-'}
-              </p>
-            </div>
-          </div>
-
-          {/* Expense */}
-          <div className="col-span-1 md:col-span-2 md:text-right">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Expense</span>
-              <p className={cn("text-sm font-black tracking-tight", expense > 0 ? "text-spend" : "text-slate-300")}>
-                {expense > 0 ? '-' + formatCurrency(expense) : '-'}
-              </p>
-            </div>
-          </div>
-
-          {/* Net (Income - Expense) */}
-          <div className="col-span-1 md:col-span-2 md:text-right">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Net</span>
-              <p className={cn(
-                "text-sm font-black tracking-tight",
-                totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300"
-              )}>
-                {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
-              </p>
-            </div>
-          </div>
-
-          {/* Balance */}
-          <div className="col-span-1 md:col-span-1 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
-              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">{isDetail ? 'After' : 'Closing'}</span>
-              <p className="text-xs font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="col-span-1 md:col-span-1 flex justify-end gap-2">
-            {!entry.isVirtual && (
-              <>
-                <button onClick={() => onEdit(entry)} className="p-2 text-slate-200 hover:text-primary transition-colors hover:bg-primary/5 rounded-xl">
-                  <Edit3 size={16} />
+          {!entry.isVirtual && (
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.stopPropagation(); onEdit(entry); }} 
+                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors cursor-pointer"
+                  title="Edit Entry"
+                >
+                  <Edit3 size={15} />
                 </button>
-                <button onClick={() => onDelete(entry.id)} className="p-2 text-slate-200 hover:text-spend transition-colors hover:bg-spend/5 rounded-xl">
-                  <Trash2 size={16} />
+              )}
+              {onDelete && (
+                <button 
+                  type="button" 
+                  onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }} 
+                  className="p-1.5 text-slate-400 hover:text-spend hover:bg-spend/5 rounded-lg transition-colors cursor-pointer"
+                  title="Delete Entry"
+                >
+                  <Trash2 size={15} />
                 </button>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
-  // Render the combined summary row for a day with multiple entries.
+  // Render the combined summary row for a day with multiple entries
   const renderGroupRow = (group, expanded) => {
     const totalDelta = group.cashDelta + group.onlineDelta;
     const isPositive = totalDelta >= 0;
@@ -411,80 +395,60 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
         type="button"
         onClick={() => toggleDate(group.date)}
         className={cn(
-          "w-full text-left px-6 md:px-8 py-4 rounded-2xl md:rounded-[2rem] shadow-premium border transition-all duration-300",
-          "bg-white border-slate-50 hover:border-primary/40 hover:bg-slate-50 hover:shadow-md cursor-pointer",
-          expanded && "border-primary/30 bg-primary/[0.03] ring-1 ring-primary/10"
+          "w-full text-left p-4 sm:px-6 sm:py-4 transition-all cursor-pointer flex items-center justify-between gap-3",
+          expanded ? "bg-primary/[0.03]" : "hover:bg-slate-50/80"
         )}
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          {/* Date & expand icon */}
-          <div className="col-span-1 md:col-span-2 flex items-center gap-3">
-            <div className={cn(
-              "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform",
-              isPositive ? "bg-income/5 text-income/70" : "bg-spend/10 text-spend"
-            )}>
-              <ChevronDown size={16} className={cn("transition-transform duration-300", expanded && "rotate-180")} />
+        {/* Left: Chevron, Date, Entry Count */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className={cn(
+            "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300",
+            isPositive ? "bg-income/10 text-income" : "bg-spend/10 text-spend"
+          )}>
+            <ChevronDown size={18} className={cn("transition-transform duration-300", expanded && "rotate-180")} />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-black text-slate-800">
+                {formatDate(group.date)}
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                {count} entries
+              </span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{formatDate(group.date)}</span>
+
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] font-bold text-slate-400">
+                Closing Bal: {formatCurrency(group.runningTotal)}
+              </span>
               {isTuesday && (
-                <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
+                <span className="text-[7px] font-black text-spend uppercase bg-spend/5 px-1.5 py-0.5 rounded border border-spend/10">
                   Shop Closed
                 </span>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Description = entry count */}
-          <div className="col-span-1 md:col-span-2">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
-              <Layers size={12} /> {count} entries
-            </span>
-          </div>
-
-          {/* Total Income */}
-          <div className="col-span-1 md:col-span-2 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Income</span>
-              <p className={cn("text-sm font-black tracking-tight", group.income > 0 ? "text-income" : "text-slate-300")}>
-                {group.income > 0 ? '+' + formatCurrency(group.income) : '-'}
-              </p>
+        {/* Right: Net Day Total */}
+        <div className="flex items-center gap-2 text-right flex-shrink-0">
+          <div>
+            <div className="flex items-center justify-end gap-1.5">
+              {group.income > 0 && (
+                <span className="text-xs sm:text-sm font-black text-income">
+                  +{formatCurrency(group.income)}
+                </span>
+              )}
+              {group.expense > 0 && (
+                <span className="text-xs sm:text-sm font-black text-spend">
+                  -{formatCurrency(group.expense)}
+                </span>
+              )}
             </div>
-          </div>
-
-          {/* Total Expense */}
-          <div className="col-span-1 md:col-span-2 md:text-right">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-300 uppercase">Expense</span>
-              <p className={cn("text-sm font-black tracking-tight", group.expense > 0 ? "text-spend" : "text-slate-300")}>
-                {group.expense > 0 ? '-' + formatCurrency(group.expense) : '-'}
-              </p>
-            </div>
-          </div>
-
-          {/* Net (Income - Expense) */}
-          <div className="col-span-1 md:col-span-2 md:text-right">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end">
-              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Net</span>
-              <p className={cn("text-sm font-black tracking-tight", totalDelta > 0 ? "text-income" : totalDelta < 0 ? "text-spend" : "text-slate-300")}>
-                {totalDelta !== 0 ? (totalDelta > 0 ? '+' : '') + formatCurrency(totalDelta) : '-'}
-              </p>
-            </div>
-          </div>
-
-          {/* Closing balance */}
-          <div className="col-span-1 md:col-span-1 md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-50">
-            <div className="flex flex-row md:flex-col justify-between items-center md:items-end bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-lg">
-              <span className="md:hidden text-[9px] font-black text-slate-400 uppercase">Closing</span>
-              <p className="text-xs font-black text-slate-800">{formatCurrency(group.runningTotal)}</p>
-            </div>
-          </div>
-
-          {/* Hint */}
-          <div className="hidden md:flex col-span-1 justify-end">
-            <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">
-              {expanded ? 'Hide' : 'View'}
-            </span>
+            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">
+              {expanded ? 'Click to collapse' : 'Click to view details'}
+            </p>
           </div>
         </div>
       </button>
@@ -492,131 +456,210 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   };
 
   return (
-    <div className="container mx-auto p-6 pt-6 space-y-8 max-w-5xl">
-      <header className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Financial Ledger</h1>
-            <p className="text-slate-400 font-bold text-[10px] uppercase mt-0.5 tracking-wider">Reports & Analysis</p>
-          </div>
-          {syncStatus}
+    <div className="container mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8 max-w-5xl">
+      <header className="bg-white px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl sm:rounded-3xl shadow-premium border border-slate-50 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-base sm:text-lg font-black text-slate-800 tracking-tight leading-tight">Financial Ledger</h1>
+          <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider hidden sm:block">Reports & Analysis</p>
         </div>
-        
-        <div className="bg-slate-50/50 px-5 py-3 rounded-2xl border border-slate-100 flex items-center gap-3">
-           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{filteredEntries.length} Transactions</span>
+
+        <div className="flex items-center gap-2">
+          {/* Month Dropdown inside Header */}
+          <div className="relative group">
+            <button 
+              onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+              className={cn(
+                "h-8 sm:h-9 px-3 sm:px-4 rounded-xl border transition-all flex items-center gap-2 text-xs font-black cursor-pointer shadow-xs active:scale-95",
+                filterMonth || isMonthDropdownOpen 
+                  ? "bg-primary/10 border-primary/30 text-primary" 
+                  : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
+              )}
+            >
+              <span>
+                {filterMonth ? new Date(filterMonth + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }) : 'All Time'}
+              </span>
+              <ChevronDown size={14} className={cn("transition-transform text-slate-400", isMonthDropdownOpen && "rotate-180")} />
+            </button>
+            
+            {isMonthDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setIsMonthDropdownOpen(false)} />
+                <div className="absolute top-full right-0 mt-2 min-w-[150px] bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-40 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                    <button 
+                      onClick={() => { setFilterMonth(''); setIsMonthDropdownOpen(false); }}
+                      className={cn(
+                        "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all",
+                        !filterMonth ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      All Time
+                    </button>
+                    {availableMonths.map(month => (
+                      <button 
+                        key={month}
+                        onClick={() => { setFilterMonth(month); setIsMonthDropdownOpen(false); }}
+                        className={cn(
+                          "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all",
+                          filterMonth === month ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                        )}
+                      >
+                        {new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {syncStatus}
         </div>
       </header>
 
-      {/* Summary Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Main Balance Card */}
-        <div className="md:col-span-4">
-          <SummaryCard 
-            title="Net Balance" 
-            amount={netBalance} 
-            icon={Landmark} 
-            gradient="bg-gradient-to-br from-slate-800 to-slate-950"
-            subtitle="Total Savings"
-          />
+      {/* Summary Stats Grid (Unified Cards with Breakup) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        {/* 1. Main Combined Balance Card */}
+        <div className="p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/5 blur-xl pointer-events-none" />
+          
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
+                <Landmark size={18} className="text-amber-400" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/10 px-2.5 py-1 rounded-full text-slate-300">
+                Total Savings
+              </span>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Net Balance</h3>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              {formatCurrency(netBalance)}
+            </div>
+          </div>
+
+          {/* Small Compact Cash + Online Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Cash (In Hand)</p>
+                <p className="text-xs sm:text-sm font-black text-amber-400 truncate">{formatCurrency(currentCashBal)}</p>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <Smartphone size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-400 truncate">Online (Bank)</p>
+                <p className="text-xs sm:text-sm font-black text-emerald-400 truncate">{formatCurrency(currentOnlineBal)}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Breakdown Grid */}
-        <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <SummaryCard 
-            title="Cash Bal" 
-            amount={currentCashBal} 
-            icon={Wallet} 
-            gradient="bg-gradient-to-br from-primary to-amber-600"
-            subtitle="In Hand"
-          />
-          <SummaryCard 
-            title="Online Bal" 
-            amount={currentOnlineBal} 
-            icon={Smartphone} 
-            gradient="bg-gradient-to-br from-income to-emerald-600"
-            subtitle="Bank"
-          />
-          <SummaryCard 
-            title="Cash Spend" 
-            amount={periodCashSpend} 
-            icon={ArrowDownRight} 
-            gradient="bg-gradient-to-br from-spend/80 to-spend"
-            subtitle="Spent"
-          />
-          <SummaryCard 
-            title="Online Spend" 
-            amount={periodOnlineSpend} 
-            icon={Smartphone} 
-            gradient="bg-gradient-to-br from-spend/80 to-spend"
-            subtitle="Spent"
-          />
+        {/* 2. Total Income Combined Card */}
+        <div className="p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-emerald-800 via-income to-emerald-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                <ArrowUpRight size={18} className="text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-white/90">
+                {filterMonth ? 'Period Income' : 'All Time Income'}
+              </span>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-white/80">Total Income</h3>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              +{formatCurrency(periodTotalIncome)}
+            </div>
+          </div>
+
+          {/* Small Compact Cash Income + Online Income Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Cash Income</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(periodCashIncome)}</p>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Smartphone size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Online Income</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(periodOnlineIncome)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Total Expense Combined Card */}
+        <div className="p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-rose-800 via-spend to-rose-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                <ArrowDownRight size={18} className="text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full text-white/90">
+                {filterMonth ? 'Period Spend' : 'All Time Spend'}
+              </span>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-white/80">Total Expense</h3>
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              -{formatCurrency(periodTotalSpend)}
+            </div>
+          </div>
+
+          {/* Small Compact Cash Spend + Online Spend Split */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/15">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Wallet size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Cash Spent</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(periodCashSpend)}</p>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/10 border border-white/10 flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
+                <Smartphone size={13} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white/70 truncate">Online Spent</p>
+                <p className="text-xs sm:text-sm font-black text-white truncate">{formatCurrency(periodOnlineSpend)}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Sticky Filters Row */}
       <div className="sticky top-4 z-40 flex flex-col md:flex-row gap-3 bg-white/80 backdrop-blur-xl p-3 rounded-[2rem] shadow-premium border border-white/50 items-stretch md:items-center">
         
-        {/* 1. Months Dropdown (Custom UI) */}
-        <div className="relative group md:w-48 flex-shrink-0">
-          <button 
-            onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
-            className={cn(
-              "w-full flex items-center justify-between px-6 h-[50px] rounded-2xl border transition-all",
-              filterMonth || isMonthDropdownOpen 
-                ? "bg-primary/10 border-primary/20 text-primary" 
-                : "bg-slate-50/50 border-slate-100 text-slate-600 hover:bg-white"
-            )}
-          >
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              {filterMonth ? new Date(filterMonth + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }) : 'All Time'}
-            </span>
-            <div className={cn(
-              "w-2 h-2 rounded-full transition-all",
-              filterMonth ? "bg-primary shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-slate-300"
-            )} />
-          </button>
-          
-          {isMonthDropdownOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setIsMonthDropdownOpen(false)} />
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-200">
-                <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
-                  <button 
-                    onClick={() => { setFilterMonth(''); setIsMonthDropdownOpen(false); }}
-                    className={cn(
-                      "w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
-                      !filterMonth ? "bg-primary text-white shadow-lg" : "text-slate-400 hover:bg-slate-50"
-                    )}
-                  >
-                    All Time
-                  </button>
-                  {availableMonths.map(month => (
-                    <button 
-                      key={month}
-                      onClick={() => { setFilterMonth(month); setIsMonthDropdownOpen(false); }}
-                      className={cn(
-                        "w-full text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
-                        filterMonth === month ? "bg-primary text-white shadow-lg" : "text-slate-400 hover:bg-slate-50"
-                      )}
-                    >
-                      {new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* 2. Type Filter */}
-        <div className="flex p-1 bg-slate-50/50 rounded-2xl border border-slate-100 h-[50px] md:w-56 flex-shrink-0">
+        {/* 1. Type Filter */}
+        <div className="flex p-1 bg-slate-50/50 rounded-2xl border border-slate-100 h-[50px] md:w-64 flex-shrink-0">
            {['all', 'income', 'spend'].map((type) => (
              <button
                key={type}
                onClick={() => setFilterType(type)}
                className={cn(
-                 "flex-1 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                 "flex-1 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer",
                  filterType === type 
                    ? (type === 'income' ? "bg-income text-white shadow-lg shadow-income/20" : 
                       type === 'spend' ? "bg-spend text-white shadow-lg shadow-spend/20" : 
@@ -629,12 +672,12 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
            ))}
         </div>
 
-        {/* 3. Search Bar */}
-        <div className="relative md:w-64 md:ml-auto">
+        {/* 2. Search Bar */}
+        <div className="relative md:w-72 md:ml-auto">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search transactions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 rounded-2xl bg-slate-50/50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 h-[50px] text-sm"
@@ -642,19 +685,7 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
         </div>
       </div>
 
-      <div className="space-y-2">
-        {/* Table Header - Visible on Desktop */}
-        <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50 rounded-2xl border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-          <div className="col-span-2">Date</div>
-          <div className="col-span-2">Description</div>
-          <div className="col-span-2 text-right">Income</div>
-          <div className="col-span-2 text-right">Expense</div>
-          <div className="col-span-2 text-right">Net</div>
-          <div className="col-span-1 text-right">Balance</div>
-          <div className="col-span-1"></div>
-        </div>
-
-        <div className="space-y-3">
+      <div className="space-y-3">
           {finalDisplayEntries.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
               <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
@@ -668,13 +699,23 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
               if (group.entries.length === 1) {
                 return renderEntryRow(group.entries[0]);
               }
-              // Multi-entry day — one combined row that expands to show entries.
+              // Multi-entry day — one combined card container that expands to show entries INSIDE.
               const expanded = expandedDates.has(group.date);
               return (
-                <div key={group.date} className="space-y-2">
+                <div 
+                  key={group.date} 
+                  className={cn(
+                    "bg-white rounded-2xl md:rounded-[2rem] shadow-premium border border-slate-100/90 overflow-hidden transition-all duration-300",
+                    expanded && "ring-1 ring-primary/20 border-primary/30 shadow-md"
+                  )}
+                >
                   {renderGroupRow(group, expanded)}
                   {expanded && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="bg-slate-50/60 border-t border-slate-100 p-2.5 sm:p-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="px-2 py-0.5 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
+                        <span>{formatDate(group.date)} · Transactions</span>
+                        <span>{group.entries.length} Entries</span>
+                      </div>
                       {group.entries.map((e) => renderEntryRow(e, true))}
                     </div>
                   )}
@@ -684,8 +725,7 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
           )}
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default History;
+  export default History;

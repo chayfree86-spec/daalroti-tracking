@@ -3,14 +3,19 @@ import Dashboard from './pages/Dashboard';
 import AddEntry from './pages/AddEntry';
 import History from './pages/History';
 import Analytics from './pages/Analytics';
+import Login from './pages/Login';
 import BottomNav from './components/BottomNav';
 import CustomAlert from './components/CustomAlert';
+import SettingsModal from './components/SettingsModal';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getApiUrl, fetchEntries, fetchRev, createEntry, updateEntry, removeEntry, subscribeToChanges } from './lib/api';
-import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { getCurrentUser } from './lib/auth';
+import { Cloud, CloudOff, RefreshCw, Settings } from 'lucide-react';
 import { cn, normalizeEntry, timeIST } from './lib/utils';
 
 function App() {
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [editingEntry, setEditingEntry] = useState(null);
   const [returnTab, setReturnTab] = useState('dashboard');
@@ -154,23 +159,48 @@ function App() {
   };
 
   const SyncStatus = ({ compact }) => (
-    <div className={cn(
-      "px-3 py-1.5 rounded-xl border flex items-center gap-2 transition-all backdrop-blur-md self-center",
-      isSyncing ? 'bg-primary/20 border-primary/30' : 'bg-slate-50/50 border-slate-100',
-      compact ? "px-2 py-1" : ""
-    )}>
-      {isSyncing ? (
-        <RefreshCw size={12} className="text-primary animate-spin" />
-      ) : getApiUrl() ? (
-        <Cloud size={12} className="text-income" />
-      ) : (
-        <CloudOff size={12} className="text-slate-300" />
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      {isSyncing && (
+        <div className="px-2.5 py-1 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-1.5 transition-all">
+          <RefreshCw size={12} className="text-primary animate-spin" />
+          <span className="text-[9px] font-black uppercase tracking-wider text-primary whitespace-nowrap">
+            Syncing...
+          </span>
+        </div>
       )}
-      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">
-        {isSyncing ? 'Syncing...' : lastSynced}
-      </span>
+
+      <button
+        type="button"
+        onClick={() => setIsSettingsOpen(true)}
+        className="w-8 h-8 sm:w-auto sm:px-2.5 sm:h-8 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 flex items-center justify-center gap-1.5 text-slate-600 hover:text-amber-600 transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
+        title="Settings & Security"
+      >
+        <Settings size={14} />
+        <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Settings</span>
+      </button>
     </div>
   );
+
+  // If user is not authenticated, display Login screen
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-background font-nunito">
+        <Login
+          onLoginSuccess={(userData) => {
+            setCurrentUser(userData);
+            loadEntries();
+          }}
+        />
+        <CustomAlert
+          show={appAlert.show}
+          type={appAlert.type}
+          title={appAlert.title}
+          message={appAlert.message}
+          onConfirm={() => setAppAlert({ ...appAlert, show: false })}
+        />
+      </div>
+    );
+  }
 
   const renderScreen = () => {
     const commonProps = { syncStatus: <SyncStatus /> };
@@ -226,8 +256,6 @@ function App() {
 
   return (
     <div className={cn("min-h-screen bg-background transition-all duration-300 pb-24")}>
-
-
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -243,6 +271,13 @@ function App() {
       <BottomNav
         activeTab={activeTab}
         setActiveTab={handleTabChange}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onLogoutSuccess={() => setCurrentUser(null)}
+        onAlert={setAppAlert}
       />
 
       <CustomAlert

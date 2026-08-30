@@ -10,7 +10,8 @@
 // Real-time SSE (/api/events) is NOT supported on shared hosting — the frontend
 // production build falls back to polling.
 
-require __DIR__ . '/db.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/migrate.php';
 
 header('Content-Type: application/json; charset=utf-8');
 // Same-domain deployment => CORS not needed. Allow OPTIONS preflight harmlessly.
@@ -118,10 +119,17 @@ const SELECT_ENTRIES = "
 try {
     $pdo = db();
 
-    // /api/health
+    // /api/migrate — dedicated endpoint to inspect and run migrations
+    if (($seg[0] ?? '') === 'migrate') {
+        $res = runMigrations($pdo);
+        send($res);
+    }
+
+    // /api/health — also ensures database schema is up-to-date
     if (($seg[0] ?? '') === 'health') {
         $pdo->query('SELECT 1');
-        send(['ok' => true, 'db' => 'up']);
+        $migrationStatus = runMigrations($pdo);
+        send(['ok' => true, 'db' => 'up', 'migrations' => $migrationStatus]);
     }
 
     // /api/rev — cheap change signature (count + last-change time) for polling.
