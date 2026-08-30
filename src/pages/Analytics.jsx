@@ -1,12 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, AreaChart, Area 
+  PieChart, Pie, Cell 
 } from 'recharts';
 import { 
   TrendingUp, TrendingDown, Landmark, Activity, ChevronDown, 
-  Smartphone, Wallet, Tag, ArrowUpRight, ArrowDownRight, Award, 
-  Calendar, Percent, DollarSign, Layers
+  Smartphone, Wallet, Tag, ArrowUpRight, ArrowDownRight, Award 
 } from 'lucide-react';
 import { formatCurrency, formatDate, cn, nowPartsIST } from '../lib/utils';
 
@@ -25,7 +24,51 @@ const categoryPillStyles = [
 ];
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Custom Dropdown Picker Component
+const CustomDropdown = ({ value, options, onChange, label, className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className={cn("relative", className)}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
+          isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
+        )}
+      >
+        <span>{options.find(o => o.value === value)?.label || label}</span>
+        <ChevronDown size={14} className={cn("transition-transform text-slate-400", isOpen && "rotate-180")} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
+            <div className="max-h-60 overflow-y-auto no-scrollbar">
+              {options.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
+                    value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 const Analytics = ({ entries = [], syncStatus }) => {
   const ist = nowPartsIST();
@@ -251,51 +294,6 @@ const Analytics = ({ entries = [], syncStatus }) => {
   }, [entries, selectedMonth, selectedYear, isAllTime]);
 
   const years = Array.from({ length: 5 }, (_, i) => ist.year - i);
-
-  // Custom Dropdown Picker Component
-  const CustomDropdown = ({ value, options, onChange, label, className }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    return (
-      <div className={cn("relative", className)}>
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
-            isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
-          )}
-        >
-          <span>{options.find(o => o.value === value)?.label || label}</span>
-          <ChevronDown size={14} className={cn("transition-transform text-slate-400", isOpen && "rotate-180")} />
-        </button>
-        
-        {isOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
-              <div className="max-h-60 overflow-y-auto no-scrollbar">
-                {options.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      onChange(opt.value);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                      value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
 
   const periodLabel = isAllTime 
     ? 'All Time' 

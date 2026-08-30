@@ -1,5 +1,4 @@
-import React from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const CustomAlert = ({ type = 'info', title, message, onConfirm, onCancel, show }) => {

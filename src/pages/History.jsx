@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Calendar, Filter, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet, ChevronDown, Layers } from 'lucide-react';
-import { formatCurrency, formatDate, cn, numberToWords, todayIST } from '../lib/utils';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Trash2, Calendar, ArrowUpRight, ArrowDownRight, Edit3, Landmark, Smartphone, Wallet, ChevronDown } from 'lucide-react';
+import { formatCurrency, formatDate, cn, todayIST, computeRunningBalances } from '../lib/utils';
 
-const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlightedEntryId, syncStatus }) => {
+const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighlightedEntryId, syncStatus }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const currentMonthStr = todayIST().slice(0, 7);
   const [filterMonth, setFilterMonth] = useState(currentMonthStr);
@@ -18,38 +18,10 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
     });
   };
 
-  // Sort and Calculate Running Balances before filtering to keep consistency
-  const sortedEntries = [...entries].sort((a, b) => {
-    if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
-    return a.id - b.id;
-  });
-
-  let runningCash = 0;
-  let runningOnline = 0;
-  const entriesWithBalance = sortedEntries.map(entry => {
-    const cashDelta = (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
-    const onlineDelta = (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
-    
-    // Use sheet values if available (from sync), otherwise calculate locally
-    // Important: check for empty string or null/undefined
-    const hasCashBal = entry.cashBalance !== undefined && entry.cashBalance !== "" && entry.cashBalance !== null;
-    const hasOnlineBal = entry.onlineBalance !== undefined && entry.onlineBalance !== "" && entry.onlineBalance !== null;
-
-    const currentEntryCashBal = hasCashBal ? Number(entry.cashBalance) : (runningCash + cashDelta);
-    const currentEntryOnlineBal = hasOnlineBal ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
-
-    runningCash = currentEntryCashBal;
-    runningOnline = currentEntryOnlineBal;
-    
-    return {
-      ...entry,
-      cashDelta,
-      onlineDelta,
-      runningCash,
-      runningOnline,
-      runningTotal: runningCash + runningOnline
-    };
-  }).reverse();
+  // Sort and Calculate Running Balances purely
+  const entriesWithBalance = useMemo(() => {
+    return computeRunningBalances(entries).reverse();
+  }, [entries]);
 
   const filteredEntries = entriesWithBalance.filter(entry => {
     const s = searchTerm.toLowerCase();
@@ -179,38 +151,32 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   const periodCashSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.cashDelta < 0 ? entry.cashDelta : 0), 0));
   const periodOnlineSpend = Math.abs(filteredEntries.reduce((acc, entry) => acc + (entry.onlineDelta < 0 ? entry.onlineDelta : 0), 0));
   const periodTotalSpend = periodCashSpend + periodOnlineSpend;
-  
-  // Auto-scroll and highlight logic
+    // Auto-scroll and highlight logic
   useEffect(() => {
-    if (highlightedEntryId) {
-      const entry = entries.find(e => e.id === highlightedEntryId);
-      if (entry) {
-        // Change month filter if needed
-        const entryMonth = entry.date.slice(0, 7);
-        if (entryMonth !== filterMonth) {
-          setFilterMonth(entryMonth);
-        }
+    if (!highlightedEntryId) return;
+    const entry = entries.find(e => e.id === highlightedEntryId);
+    if (!entry) return;
 
-        // Make sure the day's group is expanded so the entry is visible.
-        setExpandedDates(prev => prev.has(entry.date) ? prev : new Set(prev).add(entry.date));
+    const timer = setTimeout(() => {
+      const entryMonth = entry.date.slice(0, 7);
+      setFilterMonth(prev => (prev !== entryMonth ? entryMonth : prev));
+      setExpandedDates(prev => prev.has(entry.date) ? prev : new Set(prev).add(entry.date));
 
-        // Use a small timeout to ensure DOM is updated after potential filter change
-        const timer = setTimeout(() => {
-          const element = document.getElementById(`entry-${highlightedEntryId}`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Clear highlight after 3 seconds
-            const clearTimer = setTimeout(() => {
-              setHighlightedEntryId(null);
-            }, 3000);
-            return () => clearTimeout(clearTimer);
-          }
-        }, 100);
-        return () => clearTimeout(timer);
+      const element = document.getElementById(`entry-${highlightedEntryId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }
-  }, [highlightedEntryId, entries, filterMonth, setHighlightedEntryId]);
+    }, 50);
+
+    const clearTimer = setTimeout(() => {
+      setHighlightedEntryId(null);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(clearTimer);
+    };
+  }, [highlightedEntryId, entries, setHighlightedEntryId]);
   // Latest running balances for the filtered period
   const latestEntry = filteredEntries[0]; 
   const currentCashBal = latestEntry ? latestEntry.runningCash : 0;
@@ -218,58 +184,9 @@ const History = ({ entries, onDelete, onEdit, highlightedEntryId, setHighlighted
   const netBalance = currentCashBal + currentOnlineBal;
 
   // Generate dynamic month list from entries
-  const availableMonths = [...new Set(entries.filter(e => e.date).map(e => String(e.date).substring(0, 7)))].sort().reverse();
-
-  const SummaryCard = ({ title, amount, icon: Icon, gradient, subtitle, light, hideWords, footer }) => (
-    <div className={cn(
-      "p-5 rounded-[2.5rem] shadow-xl relative overflow-hidden group transition-all hover:scale-[1.02] h-full",
-      gradient,
-      light ? "text-slate-800 border border-slate-100" : "text-white"
-    )}>
-      <div className={cn(
-        "absolute -right-4 -top-4 w-20 h-20 rounded-full group-hover:scale-110 transition-transform duration-500",
-        light ? "bg-slate-50" : "bg-white/10"
-      )} />
-      <div className="flex justify-between items-start mb-3">
-        <div className={cn(
-          "p-2 rounded-xl backdrop-blur-sm",
-          light ? "bg-slate-50" : "bg-white/20"
-        )}>
-          <Icon size={18} />
-        </div>
-        <span className={cn(
-          "text-[8px] font-black uppercase tracking-widest opacity-60",
-          light ? "text-slate-400" : "text-white/60"
-        )}>{subtitle}</span>
-      </div>
-      <h3 className={cn(
-        "text-[10px] font-black uppercase tracking-wider mb-1 opacity-80",
-        light ? "text-slate-500" : "text-white/80"
-      )}>{title}</h3>
-      <div className="text-xl font-black tracking-tight">{formatCurrency(amount)}</div>
-      
-      {!hideWords && (
-        <div className={cn(
-          "text-[7px] font-black uppercase tracking-[0.15em] mt-1 truncate",
-          light ? "text-slate-300" : "opacity-30"
-        )}>
-          {numberToWords(amount)}
-        </div>
-      )}
-
-      {footer && (
-        <div className="mt-2 flex justify-between items-center text-[8px] font-black uppercase tracking-widest opacity-70">
-          {footer}
-        </div>
-      )}
-    </div>
-  );
-
-  // Time part of a timestamp like "17/06/2026, 22:57:53" -> "22:57"
-  const timePart = (ts) => {
-    const m = String(ts || '').match(/(\d{1,2}:\d{2})(:\d{2})?/);
-    return m ? m[1] : '';
-  };
+  const availableMonths = useMemo(() => {
+    return [...new Set(entries.filter(e => e.date).map(e => String(e.date).substring(0, 7)))].sort().reverse();
+  }, [entries]);
 
   // Render a single entry row (standalone or nested inside a day group)
   const renderEntryRow = (entry, isDetail = false) => {

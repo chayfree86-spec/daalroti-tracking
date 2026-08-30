@@ -1,76 +1,90 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Wallet, Smartphone, Landmark, ArrowUpRight, ArrowDownRight, Calendar, ChevronDown } from 'lucide-react';
-import { formatCurrency, formatDate, cn, numberToWords, nowPartsIST } from '../lib/utils';
+import { formatCurrency, formatDate, cn, nowPartsIST, computeRunningBalances } from '../lib/utils';
 
-const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus }) => {
+// Custom Dropdown Picker Component
+const CustomDropdown = ({ value, options, onChange, label, className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className={cn("relative", className)}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
+          isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
+        )}
+      >
+        <span>{options.find(o => o.value === value)?.label || label}</span>
+        <ChevronDown size={14} className={cn("transition-transform text-slate-400", isOpen && "rotate-180")} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[130px] animate-in fade-in zoom-in-95 duration-200">
+            <div className="max-h-60 overflow-y-auto no-scrollbar">
+              {options.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
+                    value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => {
   const ist = nowPartsIST();
   const [selectedMonth, setSelectedMonth] = useState(ist.month); // 1-12
   const [selectedYear, setSelectedYear] = useState(ist.year);
   const [isAllTime, setIsAllTime] = useState(false);
   
-  // Sort entries by date and then by ID (timestamp) to ensure consistent running balance
-  const sortedEntries = entries ? [...entries].sort((a, b) => {
-    if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
-    return a.id - b.id;
-  }) : [];
-
-  // Remove the early return to show dashboard design even when empty
-  // if (!entries || entries.length === 0) { ... }
-
-  // Calculate Running Balances for ALL entries
-  let runningCash = 0;
-  let runningOnline = 0;
-  const entriesWithRunningBalance = sortedEntries.map(entry => {
-    const cashDelta = (Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0));
-    const onlineDelta = (Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0));
-    
-    // Use sheet values if available, otherwise fallback to local calculation
-    // Important: check for empty string or null/undefined
-    const hasCashBal = entry.cashBalance !== undefined && entry.cashBalance !== "" && entry.cashBalance !== null;
-    const hasOnlineBal = entry.onlineBalance !== undefined && entry.onlineBalance !== "" && entry.onlineBalance !== null;
-    
-    const currentEntryCashBal = hasCashBal ? Number(entry.cashBalance) : (runningCash + cashDelta);
-    const currentEntryOnlineBal = hasOnlineBal ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
-    
-    runningCash = currentEntryCashBal;
-    runningOnline = currentEntryOnlineBal;
-    
-    return {
-      ...entry,
-      cashDelta,
-      onlineDelta,
-      runningCash,
-      runningOnline,
-      runningTotal: runningCash + runningOnline
-    };
-  });
+  // Calculate Running Balances for ALL entries purely
+  const entriesWithRunningBalance = useMemo(() => computeRunningBalances(entries), [entries]);
 
   // Calculate Opening Balance (Everything before the selected month/year)
   const firstDayOfRange = selectedMonth === 'all' 
     ? `${selectedYear}-01-01` 
     : `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
 
-  const lastEntryBeforeRange = [...entriesWithRunningBalance]
-    .filter(e => e.date < firstDayOfRange)
-    .sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
+  const lastEntryBeforeRange = useMemo(() => {
+    return [...entriesWithRunningBalance]
+      .filter(e => e.date < firstDayOfRange)
+      .sort((a, b) => new Date(b.date) - new Date(a.date) || (b.id || 0) - (a.id || 0))[0];
+  }, [entriesWithRunningBalance, firstDayOfRange]);
 
   const openingCash = lastEntryBeforeRange ? lastEntryBeforeRange.runningCash : 0;
   const openingOnline = lastEntryBeforeRange ? lastEntryBeforeRange.runningOnline : 0;
-  const openingTotal = openingCash + openingOnline;
 
   // Filter entries for the selected period
   const monthFilter = selectedMonth === 'all' ? `${selectedYear}` : `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-  const dashboardTransactions = [...entriesWithRunningBalance]
-    .filter(e => isAllTime || e.date.startsWith(monthFilter))
-    .reverse();
+  
+  const filteredEntries = useMemo(() => {
+    return entriesWithRunningBalance.filter(e => isAllTime || e.date.startsWith(monthFilter));
+  }, [entriesWithRunningBalance, isAllTime, monthFilter]);
 
-  // Current Selection Summary
-  const filteredEntries = entriesWithRunningBalance.filter(e => isAllTime || e.date.startsWith(monthFilter));
+  const dashboardTransactions = useMemo(() => {
+    return [...filteredEntries].reverse();
+  }, [filteredEntries]);
   
   // Detect if there's an explicit "Opening Balance" entry in the current filtered period
-  const periodOpeningEntries = filteredEntries.filter(e => 
-    e.remark?.toLowerCase().includes('opening balance')
-  );
+  const periodOpeningEntries = useMemo(() => {
+    return filteredEntries.filter(e => e.remark?.toLowerCase().includes('opening balance'));
+  }, [filteredEntries]);
   
   const periodOpeningCash = periodOpeningEntries.reduce((acc, e) => acc + Number(e.cashIncome || 0), 0);
   const periodOpeningOnline = periodOpeningEntries.reduce((acc, e) => acc + Number(e.onlineIncome || 0), 0);
@@ -83,7 +97,7 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
   const monthSpend = monthCashSpend + monthOnlineSpend;
   
   // Closing Balance (Latest available balance in the range)
-  const lastEntryOfRange = [...filteredEntries].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id)[0];
+  const lastEntryOfRange = [...filteredEntries].sort((a, b) => new Date(b.date) - new Date(a.date) || (b.id || 0) - (a.id || 0))[0];
   const displayCashBalance = lastEntryOfRange ? lastEntryOfRange.runningCash : (isAllTime ? (entriesWithRunningBalance[entriesWithRunningBalance.length-1]?.runningCash || 0) : openingCash);
   const displayOnlineBalance = lastEntryOfRange ? lastEntryOfRange.runningOnline : (isAllTime ? (entriesWithRunningBalance[entriesWithRunningBalance.length-1]?.runningOnline || 0) : openingOnline);
   const displayTotalBalance = displayCashBalance + displayOnlineBalance;
@@ -91,90 +105,18 @@ const Dashboard = ({ entries, setEntries, setActiveTab, onEntryClick, syncStatus
   // Opening Balance for the selection (Carry Forward + Current Period's Initial Opening Balance)
   const displayOpeningCash = (isAllTime ? 0 : openingCash) + periodOpeningCash;
   const displayOpeningOnline = (isAllTime ? 0 : openingOnline) + periodOpeningOnline;
-  const displayOpeningTotal = displayOpeningCash + displayOpeningOnline;
 
-  const availableYears = [...new Set(entries.map(e => new Date(e.date).getFullYear()))];
-  const currentYear = ist.year;
-  if (!availableYears.includes(currentYear)) availableYears.push(currentYear);
-  availableYears.sort((a, b) => b - a);
+  const availableYears = useMemo(() => {
+    const years = [...new Set((entries || []).map(e => new Date(e.date).getFullYear()))];
+    const currentYear = ist.year;
+    if (!years.includes(currentYear)) years.push(currentYear);
+    return years.sort((a, b) => b - a);
+  }, [entries, ist.year]);
 
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
-
-  const SummaryCard = ({ title, amount, icon: Icon, gradient, subtitle, small, footer, hideWords }) => (
-    <div className={cn(
-      "rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group transition-all hover:scale-[1.02] h-full",
-      gradient,
-      small ? "p-5" : "py-5 px-6"
-    )}>
-      <div className="absolute -right-4 -top-4 bg-white/10 w-24 h-24 rounded-full group-hover:scale-110 transition-transform duration-500" />
-      <div className="flex justify-between items-start mb-3">
-        <div className={cn("rounded-xl backdrop-blur-sm", small ? "p-1.5 bg-white/10" : "p-2 bg-white/20")}>
-          <Icon size={small ? 18 : 22} />
-        </div>
-        <span className="text-[9px] font-black uppercase tracking-widest opacity-60">{subtitle}</span>
-      </div>
-      <h3 className={cn("font-bold opacity-90 mb-0.5", small ? "text-[10px] uppercase tracking-wider" : "text-xs")}>{title}</h3>
-      <div className={cn("font-black tracking-tight", small ? "text-xl" : "text-3xl")}>{formatCurrency(amount)}</div>
-      
-      {!hideWords && (
-        <div className="text-[8px] font-black uppercase tracking-[0.15em] opacity-40 mt-1 truncate">
-          {numberToWords(amount)}
-        </div>
-      )}
-      
-      {footer && (
-        <div className="mt-2 flex justify-between items-center text-[9px] font-black uppercase tracking-widest opacity-70">
-          {footer}
-        </div>
-      )}
-    </div>
-  );
-  const CustomDropdown = ({ value, options, onChange, label, className }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    
-    return (
-      <div className={cn("relative", className)}>
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
-            isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
-          )}
-        >
-          <span>{options.find(o => o.value === value)?.label || label}</span>
-          <ChevronDown size={14} className={cn("transition-transform text-slate-400", isOpen && "rotate-180")} />
-        </button>
-        
-        {isOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[130px] animate-in fade-in zoom-in-95 duration-200">
-              <div className="max-h-60 overflow-y-auto no-scrollbar">
-                {options.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      onChange(opt.value);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                      value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="container mx-auto px-3 sm:px-6 pb-6 max-w-5xl space-y-6 sm:space-y-8">

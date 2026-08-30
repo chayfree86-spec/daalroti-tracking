@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Phone, Lock, LogOut, Check, Eye, EyeOff, Shield, User, KeyRound } from 'lucide-react';
 import { getCredentials, updateCredentials, logout } from '../lib/auth';
@@ -7,8 +7,8 @@ const SettingsModal = ({ isOpen, onClose, onLogoutSuccess, onAlert }) => {
   const [activeSubTab, setActiveSubTab] = useState('account'); // 'account' | 'password'
   
   // Account (Mobile) State
-  const [currentMobile, setCurrentMobile] = useState('');
-  const [newMobile, setNewMobile] = useState('');
+  const [currentMobile, setCurrentMobile] = useState(() => getCredentials().mobile);
+  const [newMobile, setNewMobile] = useState(() => getCredentials().mobile);
   
   // Password State
   const [oldPassword, setOldPassword] = useState('');
@@ -20,17 +20,15 @@ const SettingsModal = ({ isOpen, onClose, onLogoutSuccess, onAlert }) => {
   // Logout Confirm state
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Load current values
+  // Sync credentials on open
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
       const creds = getCredentials();
       setCurrentMobile(creds.mobile);
       setNewMobile(creds.mobile);
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setShowLogoutConfirm(false);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   if (!isOpen) return null;

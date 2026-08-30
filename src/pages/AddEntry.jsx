@@ -94,17 +94,6 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
     return result.slice(0, 8); // Top 8 most used chips
   }, [entries]);
 
-  const selectedMonthStr = formData.date.slice(0, 7);
-  const monthName = new Date(formData.date + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short' });
-
-  const totalIncomeForMonth = entries
-    .filter(e => e.date && e.date.startsWith(selectedMonthStr))
-    .reduce((sum, e) => sum + Number(e.cashIncome || 0) + Number(e.onlineIncome || 0), 0);
-
-  const totalSpendForMonth = entries
-    .filter(e => e.date && e.date.startsWith(selectedMonthStr))
-    .reduce((sum, e) => sum + Number(e.cashSpend || 0) + Number(e.onlineSpend || 0), 0);
-
   // This date's individual transactions, split by type, for the lists below each card.
   const dayIncomeEntries = entries.filter(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
   const daySpendEntries = entries.filter(e => e.date === formData.date && (Number(e.cashSpend || 0) > 0 || Number(e.onlineSpend || 0) > 0));
@@ -118,46 +107,50 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
     prevDateRef.current = formData.date;
     prevEditRef.current = editData;
 
-    if (editData) {
-      setFormData({
-        date: editData.date || todayIST(),
-        cashIncome: editData.cashIncome !== undefined && editData.cashIncome !== null && editData.cashIncome !== '' ? String(editData.cashIncome) : '',
-        onlineIncome: editData.onlineIncome !== undefined && editData.onlineIncome !== null && editData.onlineIncome !== '' ? String(editData.onlineIncome) : '',
-        cashSpend: editData.cashSpend !== undefined && editData.cashSpend !== null && editData.cashSpend !== '' ? String(editData.cashSpend) : '',
-        onlineSpend: editData.onlineSpend !== undefined && editData.onlineSpend !== null && editData.onlineSpend !== '' ? String(editData.onlineSpend) : '',
-        incomeRemark: editData.incomeRemark || editData.remark || 'Income',
-        spendRemark: editData.spendRemark || editData.remark || 'Spend',
-      });
-      const isInc = Number(editData.cashIncome || 0) > 0 || Number(editData.onlineIncome || 0) > 0;
-      setEntryMode(isInc ? 'income' : 'spend');
-      if (isInc) {
-        setExistingIncomeId(editData.id);
-        setExistingSpendId(null);
+    const timer = setTimeout(() => {
+      if (editData) {
+        setFormData({
+          date: editData.date || todayIST(),
+          cashIncome: editData.cashIncome !== undefined && editData.cashIncome !== null && editData.cashIncome !== '' ? String(editData.cashIncome) : '',
+          onlineIncome: editData.onlineIncome !== undefined && editData.onlineIncome !== null && editData.onlineIncome !== '' ? String(editData.onlineIncome) : '',
+          cashSpend: editData.cashSpend !== undefined && editData.cashSpend !== null && editData.cashSpend !== '' ? String(editData.cashSpend) : '',
+          onlineSpend: editData.onlineSpend !== undefined && editData.onlineSpend !== null && editData.onlineSpend !== '' ? String(editData.onlineSpend) : '',
+          incomeRemark: editData.incomeRemark || editData.remark || 'Income',
+          spendRemark: editData.spendRemark || editData.remark || 'Spend',
+        });
+        const isInc = Number(editData.cashIncome || 0) > 0 || Number(editData.onlineIncome || 0) > 0;
+        setEntryMode(isInc ? 'income' : 'spend');
+        if (isInc) {
+          setExistingIncomeId(editData.id);
+          setExistingSpendId(null);
+        } else {
+          setExistingSpendId(editData.id);
+          setExistingIncomeId(null);
+        }
+        dirtyRef.current = false;
       } else {
-        setExistingSpendId(editData.id);
-        setExistingIncomeId(null);
+        // Re-init only on a real context switch (date/edit change) or while the form
+        // is still pristine — so a background sync never clobbers in-progress typing.
+        if (!dateChanged && !editChanged && dirtyRef.current) return;
+
+        const existingIncome = entries.find(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
+
+        setFormData(prev => ({
+          ...prev,
+          cashIncome: existingIncome ? String(existingIncome.cashIncome || '') : '',
+          onlineIncome: existingIncome ? String(existingIncome.onlineIncome || '') : '',
+          incomeRemark: existingIncome ? (existingIncome.remark || 'Income') : 'Income',
+          cashSpend: '',
+          onlineSpend: '',
+          spendRemark: 'Spend',
+        }));
+        setExistingIncomeId(existingIncome ? existingIncome.id : null);
+        setExistingSpendId(null);
+        dirtyRef.current = false;
       }
-      dirtyRef.current = false;
-    } else {
-      // Re-init only on a real context switch (date/edit change) or while the form
-      // is still pristine — so a background sync never clobbers in-progress typing.
-      if (!dateChanged && !editChanged && dirtyRef.current) return;
+    }, 0);
 
-      const existingIncome = entries.find(e => e.date === formData.date && (Number(e.cashIncome || 0) > 0 || Number(e.onlineIncome || 0) > 0));
-
-      setFormData(prev => ({
-        ...prev,
-        cashIncome: existingIncome ? String(existingIncome.cashIncome || '') : '',
-        onlineIncome: existingIncome ? String(existingIncome.onlineIncome || '') : '',
-        incomeRemark: existingIncome ? (existingIncome.remark || 'Income') : 'Income',
-        cashSpend: '',
-        onlineSpend: '',
-        spendRemark: 'Spend',
-      }));
-      setExistingIncomeId(existingIncome ? existingIncome.id : null);
-      setExistingSpendId(null);
-      dirtyRef.current = false;
-    }
+    return () => clearTimeout(timer);
   }, [editData, formData.date, entries]);
 
   const changeDate = (days) => {
@@ -541,7 +534,6 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                     </label>
                     <input
                       ref={onlineSpendRef}
-                      autoFocus={true}
                       type="number"
                       name="onlineSpend"
                       value={formData.onlineSpend}
@@ -687,7 +679,6 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                     </label>
                     <input
                       ref={cashIncomeRef}
-                      autoFocus={true}
                       type="number"
                       name="cashIncome"
                       value={formData.cashIncome}

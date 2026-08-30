@@ -39,7 +39,7 @@ export function formatDate(dateStr) {
     
     const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
     return parsedDate.toLocaleDateString('en-IN', options);
-  } catch (e) {
+  } catch {
     return 'Invalid Date';
   }
 }
@@ -134,7 +134,7 @@ export function normalizeEntry(raw) {
   Object.keys(raw).forEach(key => {
     const normalizedKey = keyMap[key.toLowerCase()] || key;
     // Avoid duplicate keys — camelCase version takes priority
-    if (!entry.hasOwnProperty(normalizedKey)) {
+    if (!Object.prototype.hasOwnProperty.call(entry, normalizedKey)) {
       entry[normalizedKey] = raw[key];
     }
   });
@@ -173,3 +173,42 @@ export function normalizeEntry(raw) {
 
   return entry;
 }
+
+/**
+ * Compute running balances across entries purely and deterministically without side effects.
+ */
+export function computeRunningBalances(entries = []) {
+  if (!entries || !entries.length) return [];
+
+  const sorted = [...entries].sort((a, b) => {
+    if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '');
+    return (Number(a.id) || 0) - (Number(b.id) || 0);
+  });
+
+  let runningCash = 0;
+  let runningOnline = 0;
+
+  return sorted.map(entry => {
+    const cashDelta = Number(entry.cashIncome || 0) - Number(entry.cashSpend || 0);
+    const onlineDelta = Number(entry.onlineIncome || 0) - Number(entry.onlineSpend || 0);
+
+    const hasCashBal = entry.cashBalance !== undefined && entry.cashBalance !== "" && entry.cashBalance !== null && !isNaN(Number(entry.cashBalance));
+    const hasOnlineBal = entry.onlineBalance !== undefined && entry.onlineBalance !== "" && entry.onlineBalance !== null && !isNaN(Number(entry.onlineBalance));
+
+    const currentEntryCashBal = hasCashBal ? Number(entry.cashBalance) : (runningCash + cashDelta);
+    const currentEntryOnlineBal = hasOnlineBal ? Number(entry.onlineBalance) : (runningOnline + onlineDelta);
+
+    runningCash = currentEntryCashBal;
+    runningOnline = currentEntryOnlineBal;
+
+    return {
+      ...entry,
+      cashDelta,
+      onlineDelta,
+      runningCash,
+      runningOnline,
+      runningTotal: runningCash + runningOnline,
+    };
+  });
+}
+

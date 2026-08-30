@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Dashboard from './pages/Dashboard';
 import AddEntry from './pages/AddEntry';
 import History from './pages/History';
@@ -10,8 +10,8 @@ import SettingsModal from './components/SettingsModal';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getApiUrl, fetchEntries, fetchRev, createEntry, updateEntry, removeEntry, subscribeToChanges } from './lib/api';
 import { getCurrentUser } from './lib/auth';
-import { Cloud, CloudOff, RefreshCw, Settings } from 'lucide-react';
-import { cn, normalizeEntry, timeIST } from './lib/utils';
+import { RefreshCw, Settings } from 'lucide-react';
+import { cn, normalizeEntry } from './lib/utils';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
@@ -23,7 +23,6 @@ function App() {
   const [entries, setEntries] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState('Never');
   const [highlightedEntryId, setHighlightedEntryId] = useState(null);
   const [appAlert, setAppAlert] = useState({ show: false, type: 'success', title: '', message: '' });
 
@@ -41,7 +40,15 @@ function App() {
       setEditingEntry(null);
     }
     setActiveTab(tabId);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
+
+  // Ensure scroll position resets to top on every tab switch
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, [activeTab]);
 
   // Load all entries directly from the database.
   const loadEntries = useCallback(async (showError = true) => {
@@ -51,7 +58,6 @@ function App() {
       if (Array.isArray(data)) {
         setEntries(data.map(normalizeEntry));
       }
-      setLastSynced(timeIST());
     } catch (error) {
       console.error('Load failed', error);
       if (showError) {
@@ -65,7 +71,10 @@ function App() {
   useEffect(() => {
     localStorage.removeItem('dr_entries');
     localStorage.removeItem('dr_last_sync');
-    loadEntries();
+    const timer = setTimeout(() => {
+      loadEntries();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadEntries]);
 
   // MULTI-DEVICE SYNC: cheap "revision" polling (count + last-change time).
@@ -158,7 +167,7 @@ function App() {
     setActiveTab('add');
   };
 
-  const SyncStatus = ({ compact }) => (
+  const SyncStatus = () => (
     <div className="flex items-center gap-1.5 sm:gap-2">
       {isSyncing && (
         <div className="px-2.5 py-1 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-1.5 transition-all">
