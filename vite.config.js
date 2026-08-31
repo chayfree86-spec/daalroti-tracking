@@ -24,6 +24,10 @@ function copyPhpApi() {
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  // Inject a unique build version so the app can detect new deployments
+  define: {
+    __APP_VERSION__: JSON.stringify(Date.now().toString()),
+  },
   server: {
     proxy: {
       // Forward API calls to the live Hostinger backend during dev.
@@ -39,6 +43,11 @@ export default defineConfig({
     copyPhpApi(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       includeAssets: ['favicon.png', 'favicon-32x32.png', 'favicon-48x48.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'DaalRoti Tracker',

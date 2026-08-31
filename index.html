@@ -13,6 +13,51 @@
     <!-- Runtime config: edit app-config.js on the server to change the API URL
          without rebuilding (e.g. on Hostinger). Loaded before the app. -->
     <script src="./app-config.js"></script>
+    <script>
+      // ═══════════════════════════════════════════════════════════════
+      // AUTO CACHE BUSTER — runs BEFORE any JS module loads.
+      // On every new build Vite injects a fresh BUILD_TS into dist/index.html.
+      // If it differs from localStorage, nuke all SW caches and reload.
+      // ═══════════════════════════════════════════════════════════════
+      (function() {
+        var BUILD_TS = '__BUILD_TIMESTAMP__';
+        var KEY = 'daalroti_build_ts';
+        try {
+          var stored = localStorage.getItem(KEY);
+          // First visit — just store
+          if (!stored) { localStorage.setItem(KEY, BUILD_TS); }
+          // Version mismatch — clear everything & reload
+          else if (stored !== BUILD_TS) {
+            localStorage.setItem(KEY, BUILD_TS);
+            // 1. Unregister all service workers
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              });
+            }
+            // 2. Clear all CacheStorage
+            if ('caches' in window) {
+              caches.keys().then(function(names) {
+                names.forEach(function(n) { caches.delete(n); });
+              });
+            }
+            // 3. Hard reload after a brief delay for async cleanup
+            setTimeout(function() { location.reload(); }, 200);
+          }
+        } catch(e) {}
+
+        // Theme bootstrap — apply dark class before paint to avoid flash
+        try {
+          var theme = localStorage.getItem('daalroti_theme') || 'light';
+          var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

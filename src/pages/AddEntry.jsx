@@ -7,16 +7,16 @@ import CustomAlert from '../components/CustomAlert';
 
 // Transparent modern colorful pastel palette for Quick Chips
 const pillColorStyles = [
-  'bg-amber-500/10 text-amber-900 border-amber-300/60 hover:bg-amber-500/20',
-  'bg-blue-500/10 text-blue-900 border-blue-300/60 hover:bg-blue-500/20',
-  'bg-emerald-500/10 text-emerald-900 border-emerald-300/60 hover:bg-emerald-500/20',
-  'bg-purple-500/10 text-purple-900 border-purple-300/60 hover:bg-purple-500/20',
-  'bg-rose-500/10 text-rose-900 border-rose-300/60 hover:bg-rose-500/20',
-  'bg-indigo-500/10 text-indigo-900 border-indigo-300/60 hover:bg-indigo-500/20',
-  'bg-teal-500/10 text-teal-900 border-teal-300/60 hover:bg-teal-500/20',
-  'bg-orange-500/10 text-orange-900 border-orange-300/60 hover:bg-orange-500/20',
-  'bg-cyan-500/10 text-cyan-900 border-cyan-300/60 hover:bg-cyan-500/20',
-  'bg-fuchsia-500/10 text-fuchsia-900 border-fuchsia-300/60 hover:bg-fuchsia-500/20',
+  'bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/60 dark:border-amber-500/40 hover:bg-amber-500/20 dark:hover:bg-amber-500/30',
+  'bg-blue-500/10 text-blue-900 dark:text-blue-300 border-blue-300/60 dark:border-blue-500/40 hover:bg-blue-500/20 dark:hover:bg-blue-500/30',
+  'bg-emerald-500/10 text-emerald-900 dark:text-emerald-300 border-emerald-300/60 dark:border-emerald-500/40 hover:bg-emerald-500/20 dark:hover:bg-emerald-500/30',
+  'bg-purple-500/10 text-purple-900 dark:text-purple-300 border-purple-300/60 dark:border-purple-500/40 hover:bg-purple-500/20 dark:hover:bg-purple-500/30',
+  'bg-rose-500/10 text-rose-900 dark:text-rose-300 border-rose-300/60 dark:border-rose-500/40 hover:bg-rose-500/20 dark:hover:bg-rose-500/30',
+  'bg-indigo-500/10 text-indigo-900 dark:text-indigo-300 border-indigo-300/60 dark:border-indigo-500/40 hover:bg-indigo-500/20 dark:hover:bg-indigo-500/30',
+  'bg-teal-500/10 text-teal-900 dark:text-teal-300 border-teal-300/60 dark:border-teal-500/40 hover:bg-teal-500/20 dark:hover:bg-teal-500/30',
+  'bg-orange-500/10 text-orange-900 dark:text-orange-300 border-orange-300/60 dark:border-orange-500/40 hover:bg-orange-500/20 dark:hover:bg-orange-500/30',
+  'bg-cyan-500/10 text-cyan-900 dark:text-cyan-300 border-cyan-300/60 dark:border-cyan-500/40 hover:bg-cyan-500/20 dark:hover:bg-cyan-500/30',
+  'bg-fuchsia-500/10 text-fuchsia-900 dark:text-fuchsia-300 border-fuchsia-300/60 dark:border-fuchsia-500/40 hover:bg-fuchsia-500/20 dark:hover:bg-fuchsia-500/30',
 ];
 
 // Time part of a timestamp like "17/06/2026, 22:57:53" -> "22:57"
@@ -25,7 +25,7 @@ const timePart = (ts) => {
   return m ? m[1] : '';
 };
 
-const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }) => {
+const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete, syncStatus }) => {
   const [entryMode, setEntryMode] = useState('spend'); // 'spend' (Frequent default) or 'income'
   const [isDayListExpanded, setIsDayListExpanded] = useState(false); // Toggle to show current date's detail transactions
   const [formData, setFormData] = useState({
@@ -333,12 +333,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
     }, 0);
 
     return (
-      <div className="bg-white rounded-[2rem] shadow-premium border border-slate-100 overflow-hidden transition-all">
-        {/* Clickable Header Card that reveals today's detail transactions */}
+      <div className="mt-4 sm:mt-6 rounded-[2rem] sm:rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-premium overflow-hidden transition-all">
+        {/* Accordion Trigger Header */}
         <button
           type="button"
           onClick={() => setIsDayListExpanded(!isDayListExpanded)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+          className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3">
             <div className={cn(
@@ -348,10 +348,10 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
               {list.length}
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-black text-slate-800 tracking-tight">
+              <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-white tracking-tight">
                 {formatDate(formData.date)} · {isIncome ? 'Income' : 'Expenses'}
               </h3>
-              <p className="text-[10px] font-bold text-slate-400">
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
                 {list.length > 0 ? (isDayListExpanded ? 'Tap to hide detail entries' : 'Tap to view detail entries') : 'No entries recorded'}
               </p>
             </div>
@@ -366,7 +366,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                 {isIncome ? '+' : '-'}{formatCurrency(dayTotal)}
               </span>
             )}
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
               {isDayListExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </div>
           </div>
@@ -374,14 +374,14 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
 
         {/* Expanded Transaction Details */}
         {isDayListExpanded && (
-          <div className="p-4 sm:p-5 pt-0 border-t border-slate-100/80 bg-slate-50/50 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <div className="p-4 sm:p-5 pt-0 border-t border-slate-100/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center justify-between">
               <span>{formatDate(formData.date)} Entries ({list.length})</span>
               <span>Day Total: {isIncome ? '+' : '-'}{formatCurrency(dayTotal)}</span>
             </div>
 
             {list.length === 0 ? (
-              <p className="text-xs font-bold text-slate-300 text-center py-6">{emptyLabel}</p>
+              <p className="text-xs font-bold text-slate-300 dark:text-slate-600 text-center py-6">{emptyLabel}</p>
             ) : (
               list.map((entry) => {
                 const cashAmt = Number(isIncome ? entry.cashIncome : entry.cashSpend) || 0;
@@ -390,25 +390,25 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                 return (
                   <div 
                     key={entry.id} 
-                    className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-100 shadow-xs"
+                    className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/80 shadow-xs"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm sm:text-base font-black text-slate-700 truncate">
+                      <p className="text-sm sm:text-base font-black text-slate-700 dark:text-slate-200 truncate">
                         {entry.remark || (isIncome ? 'Income' : 'Spend')}
                       </p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                         {cashAmt > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 px-2 py-0.5 rounded-lg">
                             <Wallet size={10} /> {formatCurrency(cashAmt)}
                           </span>
                         )}
                         {onlineAmt > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/20 px-2 py-0.5 rounded-lg">
                             <Smartphone size={10} /> {formatCurrency(onlineAmt)}
                           </span>
                         )}
                         {timePart(entry.timestamp) && (
-                          <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
                             {timePart(entry.timestamp)}
                           </span>
                         )}
@@ -425,7 +425,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                         <button 
                           type="button" 
                           onClick={() => onEdit(entry)} 
-                          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center cursor-pointer active:scale-90 shadow-xs"
+                          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center cursor-pointer active:scale-90 shadow-xs"
                           title="Edit Entry"
                         >
                           <Edit3 size={16} />
@@ -435,7 +435,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                         <button 
                           type="button" 
                           onClick={() => onDelete(entry.id)} 
-                          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-rose-50 border border-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center cursor-pointer active:scale-90 shadow-xs"
+                          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center cursor-pointer active:scale-90 shadow-xs"
                           title="Delete Entry"
                         >
                           <Trash2 size={16} />
@@ -456,10 +456,10 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
     <div className="container mx-auto px-3 sm:px-6 pb-6 max-w-4xl">
       {/* Sticky Mobile-Touch Optimized Header */}
       <div className="sticky top-0 z-30 pt-2 pb-2 sm:pt-4 sm:pb-3 pointer-events-none">
-        <header className="bg-white/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
+        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 dark:border-slate-800/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div>
-              <h1 className="text-sm sm:text-base font-black text-slate-800 tracking-tight leading-tight">
+              <h1 className="text-sm sm:text-base font-black text-slate-800 dark:text-white tracking-tight leading-tight">
                 {editData ? 'Edit Entry' : 'Add Entry'}
               </h1>
               <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider hidden sm:block">
@@ -469,7 +469,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
             {editData && (
               <button 
                 onClick={onCancel}
-                className="bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-slate-200 transition-colors cursor-pointer"
+                className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -481,7 +481,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
             <button 
               type="button"
               onClick={() => changeDate(-1)}
-              className="w-10 h-10 sm:w-10 sm:h-10 rounded-xl bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/70 flex items-center justify-center text-slate-600 hover:text-primary transition-all active:scale-90 cursor-pointer shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/70 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-all active:scale-90 cursor-pointer shrink-0"
               title="Previous Day"
               aria-label="Previous Day"
             >
@@ -491,29 +491,31 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
             <button
               type="button"
               onClick={() => setShowCalendar(true)}
-              className="h-10 sm:h-10 px-3.5 sm:px-4 rounded-xl bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/70 flex items-center gap-2 hover:border-primary/40 transition-all font-black text-xs sm:text-sm text-slate-800 shadow-sm active:scale-95 cursor-pointer"
+              className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/70 dark:border-slate-700 flex items-center gap-1.5 sm:gap-2 hover:border-primary/40 transition-all font-black text-xs sm:text-sm text-slate-800 dark:text-slate-200 shadow-xs active:scale-95 cursor-pointer"
               title="Open Calendar"
             >
               <span className="whitespace-nowrap">{formatDate(formData.date)}</span>
-              <Calendar size={16} className="text-primary shrink-0" />
+              <Calendar size={15} className="text-primary shrink-0" />
             </button>
 
             <button 
               type="button"
               onClick={() => changeDate(1)}
-              className="w-10 h-10 sm:w-10 sm:h-10 rounded-xl bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/70 flex items-center justify-center text-slate-600 hover:text-primary transition-all active:scale-90 cursor-pointer shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/70 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-all active:scale-90 cursor-pointer shrink-0"
               title="Next Day"
               aria-label="Next Day"
             >
               <ChevronRight size={18} />
             </button>
+
+            {syncStatus}
           </div>
         </header>
       </div>
 
       {/* Top Segmented Mode Switcher (Clean, Modern & Mobile Touch-Friendly) */}
       {!editData && (
-        <div className="grid grid-cols-2 p-1.5 bg-slate-100/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-slate-200/80 mb-5 sm:mb-6 max-w-md mx-auto shadow-inner gap-1.5">
+        <div className="grid grid-cols-2 p-1.5 bg-slate-100/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 mb-5 sm:mb-6 max-w-md mx-auto shadow-inner gap-1.5 transition-colors">
           <button
             type="button"
             onClick={() => {
@@ -524,12 +526,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
               "min-h-[48px] sm:min-h-[52px] px-3 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all cursor-pointer select-none active:scale-95",
               entryMode === 'spend'
                 ? "bg-spend text-white shadow-md shadow-spend/30 ring-2 ring-spend/20 font-black"
-                : "bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                : "bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60"
             )}
           >
             <div className={cn(
               "w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-colors shrink-0",
-              entryMode === 'spend' ? "bg-white/20 text-white" : "bg-rose-100 text-spend"
+              entryMode === 'spend' ? "bg-white/20 text-white" : "bg-rose-100 dark:bg-rose-500/20 text-spend"
             )}>
               <ArrowDownRight size={16} />
             </div>
@@ -546,12 +548,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
               "min-h-[48px] sm:min-h-[52px] px-3 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2.5 transition-all cursor-pointer select-none active:scale-95",
               entryMode === 'income'
                 ? "bg-income text-white shadow-md shadow-income/30 ring-2 ring-income/20 font-black"
-                : "bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                : "bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60"
             )}
           >
             <div className={cn(
               "w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-colors shrink-0",
-              entryMode === 'income' ? "bg-white/20 text-white" : "bg-emerald-100 text-income"
+              entryMode === 'income' ? "bg-white/20 text-white" : "bg-emerald-100 dark:bg-emerald-500/20 text-income"
             )}>
               <ArrowUpRight size={16} />
             </div>
@@ -565,7 +567,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
         {/* ================= SPEND FORM (DEFAULT) ================= */}
         {entryMode === 'spend' && (
           <div className="space-y-4 sm:space-y-6">
-            <form onSubmit={handleSaveSpend} className="bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col justify-between">
+            <form onSubmit={handleSaveSpend} className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-50 dark:border-slate-800 flex flex-col justify-between transition-colors">
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -573,7 +575,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                       <ArrowDownRight size={20} />
                     </div>
                     <div>
-                      <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">Record Expense / Spend</h2>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">Record Expense / Spend</h2>
                       <p className="text-[11px] font-black text-spend uppercase tracking-wider mt-0.5">
                         Date Total: -{formatCurrency(daySpendTotal)} ({daySpendEntries.length} {daySpendEntries.length === 1 ? 'item' : 'items'})
                       </p>
@@ -598,7 +600,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                       onWheel={(e) => e.target.blur()}
                       placeholder="0"
                       inputMode="decimal"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[50px] text-base"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-100 dark:border-slate-700 focus:border-spend/40 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all font-bold text-slate-700 dark:text-white h-[50px] text-base"
                     />
                   </div>
 
@@ -618,12 +620,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                       onWheel={(e) => e.target.blur()}
                       placeholder="0"
                       inputMode="decimal"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[50px] text-base"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-100 dark:border-slate-700 focus:border-primary/40 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all font-bold text-slate-700 dark:text-white h-[50px] text-base"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2.5 pt-2 border-t border-slate-50 relative">
+                <div className="space-y-2.5 pt-2 border-t border-slate-50 dark:border-slate-800 relative">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                     Expense Reason / Item Name
                     <MessageSquare size={12} className="text-primary" />
@@ -642,7 +644,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                     onKeyDown={(e) => handleKeyDown(e, spendSubmitRef)}
                     placeholder="E.g. Kirana, Sabji, Doodh, Gas, Wages..."
                     autoComplete="off"
-                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-spend/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[50px]"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-100 dark:border-slate-700 focus:border-spend/40 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all font-bold text-slate-700 dark:text-white h-[50px]"
                   />
 
                   {/* Fast Mobile-Optimized 1-Tap Expense Suggestion Chips */}
@@ -677,14 +679,14 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-50 left-0 right-0 top-[100%] mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+                        className="absolute z-50 left-0 right-0 top-[100%] mt-2 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
                       >
                         {uniqueRemarks.filter(r => r.toLowerCase().includes(formData.spendRemark.toLowerCase())).slice(0, 5).map((rem, i) => (
                           <button
                             key={i}
                             type="button"
                             onClick={() => selectSuggestion('spendRemark', rem)}
-                            className="w-full text-left px-5 py-3 hover:bg-slate-50 font-bold text-slate-600 text-sm border-b border-slate-50 last:border-0 transition-colors cursor-pointer"
+                            className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 text-sm border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors cursor-pointer"
                           >
                             {rem}
                           </button>
@@ -712,14 +714,14 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
         {/* ================= INCOME FORM (1 / DAY) ================= */}
         {entryMode === 'income' && (
           <div className="space-y-4 sm:space-y-6">
-            <form onSubmit={handleSaveIncome} className="bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-50 flex flex-col justify-between">
+            <form onSubmit={handleSaveIncome} className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-50 dark:border-slate-800 flex flex-col justify-between transition-colors">
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-income/10 text-income flex items-center justify-center">
                     <ArrowUpRight size={20} />
                   </div>
                     <div>
-                      <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">Record Daily Income</h2>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">Record Daily Income</h2>
                       <p className="text-[11px] font-black text-income uppercase tracking-wider mt-0.5">
                         Date Total: +{formatCurrency(dayIncomeTotal)} ({dayIncomeEntries.length} {dayIncomeEntries.length === 1 ? 'item' : 'items'})
                       </p>
@@ -743,7 +745,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                       onWheel={(e) => e.target.blur()}
                       placeholder="0"
                       inputMode="decimal"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-primary/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[50px] text-base"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-100 dark:border-slate-700 focus:border-primary/40 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all font-bold text-slate-700 dark:text-white h-[50px] text-base"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -762,12 +764,12 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                       onWheel={(e) => e.target.blur()}
                       placeholder="0"
                       inputMode="decimal"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[50px] text-base"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-100 dark:border-slate-700 focus:border-income/40 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all font-bold text-slate-700 dark:text-white h-[50px] text-base"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1.5 pt-2 border-t border-slate-50 relative">
+                <div className="space-y-1.5 pt-2 border-t border-slate-50 dark:border-slate-800 relative">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                     Remark / Description
                     <MessageSquare size={12} className="text-primary" />
@@ -786,7 +788,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                     onKeyDown={(e) => handleKeyDown(e, incomeSubmitRef)}
                     placeholder="E.g. Daily Revenue, Counter, Catering..."
                     autoComplete="off"
-                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-income/30 focus:bg-white focus:outline-none transition-all font-bold text-slate-700 h-[50px]"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border-2 border-slate-100 dark:border-slate-700 focus:border-income/40 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-all font-bold text-slate-700 dark:text-white h-[50px]"
                   />
                   
                   <AnimatePresence>
@@ -795,14 +797,14 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-50 left-0 right-0 top-[100%] mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+                        className="absolute z-50 left-0 right-0 top-[100%] mt-2 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
                       >
                         {uniqueRemarks.filter(r => r.toLowerCase().includes(formData.incomeRemark.toLowerCase())).slice(0, 5).map((rem, i) => (
                           <button
                             key={i}
                             type="button"
                             onClick={() => selectSuggestion('incomeRemark', rem)}
-                            className="w-full text-left px-5 py-3 hover:bg-slate-50 font-bold text-slate-600 text-sm border-b border-slate-50 last:border-0 transition-colors cursor-pointer"
+                            className="w-full text-left px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 text-sm border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors cursor-pointer"
                           >
                             {rem}
                           </button>
@@ -819,7 +821,7 @@ const AddEntry = ({ onSave, editData, onCancel, entries = [], onEdit, onDelete }
                 className="mt-6 w-full h-12 sm:h-14 min-h-[48px] sm:min-h-[54px] bg-income hover:bg-income-dark active:bg-income-dark text-white rounded-2xl font-black text-xs sm:text-sm uppercase tracking-[0.15em] shadow-lg shadow-income/20 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 cursor-pointer shrink-0"
               >
                 <Save size={18} />
-                <span>{editData ? 'Update Income' : 'Save Daily Income'}</span>
+                <span>{editData ? 'Update Income' : 'Save Income'}</span>
               </button>
             </form>
 

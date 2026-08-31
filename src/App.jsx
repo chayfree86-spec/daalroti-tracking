@@ -10,11 +10,13 @@ import SettingsModal from './components/SettingsModal';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getApiUrl, fetchEntries, fetchRev, createEntry, updateEntry, removeEntry, subscribeToChanges } from './lib/api';
 import { getCurrentUser } from './lib/auth';
-import { RefreshCw, Settings } from 'lucide-react';
+import { useTheme } from './context/ThemeContext';
+import { RefreshCw, Settings, SunMedium, Moon } from 'lucide-react';
 import { cn, normalizeEntry } from './lib/utils';
 import SteamBackground from './components/SteamBackground';
 
 function App() {
+  const { theme, setTheme, isDark } = useTheme();
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -169,11 +171,11 @@ function App() {
   };
 
   const SyncStatus = () => (
-    <div className="flex items-center gap-1.5 sm:gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
       {isSyncing && (
         <div className="px-2.5 py-1 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-1.5 transition-all">
           <RefreshCw size={12} className="text-primary animate-spin" />
-          <span className="text-[9px] font-black uppercase tracking-wider text-primary whitespace-nowrap">
+          <span className="text-[9px] font-black uppercase tracking-wider text-primary whitespace-nowrap hidden sm:inline">
             Syncing...
           </span>
         </div>
@@ -182,10 +184,10 @@ function App() {
       <button
         type="button"
         onClick={() => setIsSettingsOpen(true)}
-        className="w-8 h-8 sm:w-auto sm:px-2.5 sm:h-8 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 flex items-center justify-center gap-1.5 text-slate-600 hover:text-amber-600 transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
+        className="w-9 h-9 sm:w-auto sm:px-3 sm:h-9 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/70 dark:border-slate-700 flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-all shadow-xs active:scale-95 cursor-pointer shrink-0"
         title="Settings & Security"
       >
-        <Settings size={14} />
+        <Settings size={15} />
         <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Settings</span>
       </button>
     </div>
@@ -194,7 +196,7 @@ function App() {
   // If user is not authenticated, display Login screen
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-background font-nunito">
+      <div className="min-h-screen bg-background dark:bg-[#0b0f19] font-nunito transition-colors">
         <Login
           onLoginSuccess={(userData) => {
             setCurrentUser(userData);
@@ -237,6 +239,7 @@ function App() {
           }}
           onEdit={handleEdit}
           onDelete={deleteEntry}
+          {...commonProps}
         />;
       case 'reports':
         return <History
@@ -265,7 +268,7 @@ function App() {
   };
 
   return (
-    <div className={cn("min-h-screen bg-background transition-all duration-300 pb-24 relative")}>
+    <div className={cn("min-h-screen bg-background dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 transition-colors duration-300 pb-24 relative")}>
       <SteamBackground />
 
       <AnimatePresence mode="wait">

@@ -12,7 +12,9 @@ const CustomDropdown = ({ value, options, onChange, label, className }) => {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
-          isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
+          isOpen 
+            ? "bg-primary/10 border-primary/30 text-primary" 
+            : "bg-slate-50 dark:bg-slate-800/80 border-slate-200/70 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
         )}
       >
         <span>{options.find(o => o.value === value)?.label || label}</span>
@@ -22,7 +24,7 @@ const CustomDropdown = ({ value, options, onChange, label, className }) => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[130px] animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[130px] animate-in fade-in zoom-in-95 duration-200">
             <div className="max-h-60 overflow-y-auto no-scrollbar">
               {options.map((opt) => (
                 <button
@@ -33,7 +35,9 @@ const CustomDropdown = ({ value, options, onChange, label, className }) => {
                   }}
                   className={cn(
                     "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                    value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                    value === opt.value 
+                      ? "bg-primary text-white shadow-sm" 
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                 >
                   {opt.label}
@@ -122,10 +126,10 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
     <div className="container mx-auto px-3 sm:px-6 pb-6 max-w-5xl space-y-6 sm:space-y-8">
       {/* Sticky Mobile-Touch Aligned Header */}
       <div className="sticky top-0 z-30 pt-2 pb-2 sm:pt-4 sm:pb-3 pointer-events-none">
-        <header className="bg-white/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
+        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 dark:border-slate-800/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div>
-              <h1 className="text-sm sm:text-lg font-black text-slate-800 tracking-tight leading-tight">
+              <h1 className="text-sm sm:text-lg font-black text-slate-800 dark:text-white tracking-tight leading-tight">
                 DaalRoti <span className="text-primary">Tracker</span>
               </h1>
               <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider hidden sm:block">
@@ -306,10 +310,10 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <section className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-black text-slate-800 tracking-tight">Recent Transactions</h2>
+            <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Recent Transactions</h2>
             <button 
               onClick={() => setActiveTab('reports')}
-              className="text-primary text-xs font-bold uppercase tracking-widest bg-primary/5 px-4 py-2 rounded-full hover:bg-primary/10 transition-colors"
+              className="text-primary text-xs font-bold uppercase tracking-widest bg-primary/5 dark:bg-primary/10 px-4 py-2 rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors cursor-pointer"
             >
               View All
             </button>
@@ -317,7 +321,7 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
 
           <div className="space-y-4">
             {/* Opening Balance (Carry Forward) Row */}
-            <div className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+            <div className="bg-slate-900 dark:bg-slate-950 p-6 rounded-[2.5rem] shadow-2xl border border-transparent dark:border-slate-800 relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 bg-white/5 w-24 h-24 rounded-full" />
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-4">
@@ -344,7 +348,7 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
             </div>
 
             {dashboardTransactions.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
                 <p className="text-slate-400 font-bold">No entries for {selectedMonth === 'all' ? 'All Months' : months[selectedMonth - 1]} {selectedYear}</p>
               </div>
             ) : (
@@ -356,7 +360,7 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
                   <div 
                     key={entry.id} 
                     onClick={() => onEntryClick(entry.id)}
-                    className="bg-white p-6 rounded-[2.5rem] shadow-premium border border-slate-50 transition-all hover:scale-[1.01] cursor-pointer active:scale-95 group"
+                    className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-premium border border-slate-50 dark:border-slate-800/80 transition-all hover:scale-[1.01] cursor-pointer active:scale-95 group"
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
@@ -367,7 +371,7 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
                                 {isPositive ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-xs font-black text-slate-800">{formatDate(entry.date)}</span>
+                                <span className="text-xs font-black text-slate-800 dark:text-slate-100">{formatDate(entry.date)}</span>
                                 {new Date(entry.date + 'T00:00:00').getDay() === 2 && (
                                   <span className="text-[7px] font-black text-spend uppercase tracking-tighter mt-0.5 bg-spend/5 px-1.5 py-0.5 rounded-md self-start border border-spend/10">
                                     Shop Closed
@@ -379,28 +383,28 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
                             </div>
                         </div>
                         
-                        <div className="flex flex-row md:items-center justify-between md:justify-end gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-50">
+                        <div className="flex flex-row md:items-center justify-between md:justify-end gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-50 dark:border-slate-800">
                             <div className="flex gap-6">
                                 {entry.cashDelta !== 0 && (
                                     <div className="text-left md:text-right">
-                                        <p className="text-[8px] font-black text-slate-300 uppercase">Cash</p>
-                                        <p className={cn("text-sm font-black", entry.cashDelta > 0 ? "text-income/70" : "text-spend")}>
+                                        <p className="text-[8px] font-black text-slate-300 dark:text-slate-500 uppercase">Cash</p>
+                                        <p className={cn("text-sm font-black", entry.cashDelta > 0 ? "text-income/70 dark:text-income" : "text-spend")}>
                                             {entry.cashDelta > 0 ? '+' : ''}{formatCurrency(entry.cashDelta)}
                                         </p>
                                     </div>
                                 )}
                                 {entry.onlineDelta !== 0 && (
                                     <div className="text-left md:text-right">
-                                        <p className="text-[8px] font-black text-slate-300 uppercase">Online</p>
-                                        <p className={cn("text-sm font-black", entry.onlineDelta > 0 ? "text-income/70" : "text-spend")}>
+                                        <p className="text-[8px] font-black text-slate-300 dark:text-slate-500 uppercase">Online</p>
+                                        <p className={cn("text-sm font-black", entry.onlineDelta > 0 ? "text-income/70 dark:text-income" : "text-spend")}>
                                             {entry.onlineDelta > 0 ? '+' : ''}{formatCurrency(entry.onlineDelta)}
                                         </p>
                                     </div>
                                 )}
                             </div>
-                            <div className="text-right pl-4 border-l border-slate-50">
+                            <div className="text-right pl-4 border-l border-slate-50 dark:border-slate-800">
                                 <p className="text-[8px] font-black text-slate-400 uppercase">Closing</p>
-                                <p className="text-base font-black text-slate-800">{formatCurrency(entry.runningTotal)}</p>
+                                <p className="text-base font-black text-slate-800 dark:text-white">{formatCurrency(entry.runningTotal)}</p>
                             </div>
                         </div>
                     </div>
@@ -412,8 +416,8 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
         </section>
 
         <section className="hidden lg:block space-y-6">
-          <h2 className="text-xl font-black text-slate-800 tracking-tight">Balance Summary</h2>
-          <div className="bg-white p-10 rounded-[3rem] shadow-premium border border-slate-50 h-[400px] flex flex-col items-center justify-center text-center">
+          <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Balance Summary</h2>
+          <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-premium border border-slate-50 dark:border-slate-800 h-[400px] flex flex-col items-center justify-center text-center">
             {/* Donut Chart using Conic Gradient */}
             <div 
               className="w-64 h-64 rounded-full flex items-center justify-center relative shadow-inner group"
@@ -425,15 +429,15 @@ const Dashboard = ({ entries = [], setActiveTab, onEntryClick, syncStatus }) => 
               }}
             >
                {/* Inner Circle to make it a Donut */}
-               <div className="absolute inset-[20px] bg-white rounded-full shadow-premium flex flex-col items-center justify-center">
+               <div className="absolute inset-[20px] bg-white dark:bg-slate-900 rounded-full shadow-premium flex flex-col items-center justify-center transition-colors">
                   <p className="text-[10px] font-black text-slate-400 uppercase">Available Funds</p>
-                  <p className="text-3xl font-black text-slate-800">{formatCurrency(displayTotalBalance)}</p>
+                  <p className="text-3xl font-black text-slate-800 dark:text-white">{formatCurrency(displayTotalBalance)}</p>
                    <div className="mt-4 space-y-1">
-                    <p className="text-xs font-bold text-slate-700 flex items-center justify-center gap-2">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm" /> 
                       Cash: <span className="text-primary font-black">{formatCurrency(displayCashBalance)}</span>
                     </p>
-                    <p className="text-xs font-bold text-slate-700 flex items-center justify-center gap-2">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-income shadow-sm" /> 
                       Online: <span className="text-income font-black">{formatCurrency(displayOnlineBalance)}</span>
                     </p>

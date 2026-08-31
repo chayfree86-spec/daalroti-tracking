@@ -206,10 +206,10 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
         className={cn(
           "transition-all duration-300",
           isDetail
-            ? "p-3 sm:p-4 rounded-xl bg-white border border-slate-100 shadow-xs hover:border-primary/30 flex items-center justify-between gap-3"
-            : "p-4 sm:px-6 sm:py-4 rounded-2xl md:rounded-[2rem] bg-white border border-slate-100 shadow-premium flex items-center justify-between gap-3",
-          entry.isVirtual && "bg-slate-50/70 border-dashed opacity-75",
-          highlightedEntryId === entry.id && "bg-amber-50 border-amber-300 ring-2 ring-primary/20 scale-[1.01] shadow-lg z-10"
+            ? "p-3 sm:p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/80 shadow-xs hover:border-primary/30 flex items-center justify-between gap-3"
+            : "p-4 sm:px-6 sm:py-4 rounded-2xl md:rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-premium flex items-center justify-between gap-3",
+          entry.isVirtual && "bg-slate-50/70 dark:bg-slate-800/40 border-dashed opacity-75",
+          highlightedEntryId === entry.id && "bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/40 ring-2 ring-primary/20 scale-[1.01] shadow-lg z-10"
         )}
       >
         {/* Left: Icon, Remark, Payment Mode Pill */}
@@ -217,7 +217,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
           <div className={cn(
             "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0",
             entry.isVirtual 
-              ? "bg-slate-100 text-slate-400" 
+              ? "bg-slate-100 dark:bg-slate-800 text-slate-400" 
               : (isPositive ? "bg-income/10 text-income" : "bg-spend/10 text-spend")
           )}>
             {entry.isVirtual ? <Calendar size={16} /> : (isPositive ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />)}
@@ -225,11 +225,11 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-xs sm:text-sm font-black text-slate-800 truncate">
+              <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-white truncate">
                 {entry.remark || (entry.isVirtual ? 'Shop Closed (Tuesday)' : (isPositive ? 'Income' : 'Spend'))}
               </p>
               {!isDetail && !entry.isVirtual && (
-                <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 hidden sm:inline">
                   · {formatDate(entry.date)}
                 </span>
               )}
@@ -237,17 +237,17 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
 
             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
               {!isDetail && (
-                <span className="text-[10px] font-bold text-slate-400 sm:hidden">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 sm:hidden">
                   {formatDate(entry.date)}
                 </span>
               )}
               {cashAmt > 0 && (
-                <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50">
+                <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-200/50 dark:border-amber-500/20">
                   <Wallet size={10} /> Cash {formatCurrency(cashAmt)}
                 </span>
               )}
               {onlineAmt > 0 && (
-                <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/50">
+                <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-200/50 dark:border-blue-500/20">
                   <Smartphone size={10} /> Online {formatCurrency(onlineAmt)}
                 </span>
               )}
@@ -266,7 +266,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
             <p className={cn("text-xs sm:text-sm font-black tracking-tight", isPositive ? "text-income" : "text-spend")}>
               {entry.isVirtual ? '₹0' : (isPositive ? '+' : '-') + formatCurrency(amount)}
             </p>
-            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400">
+            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 dark:text-slate-500">
               Bal: {formatCurrency(entry.runningTotal)}
             </p>
           </div>
@@ -277,7 +277,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                 <button 
                   type="button" 
                   onClick={(e) => { e.stopPropagation(); onEdit(entry); }} 
-                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
                   title="Edit Entry"
                 >
                   <Edit3 size={15} />
@@ -287,7 +287,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                 <button 
                   type="button" 
                   onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }} 
-                  className="p-1.5 text-slate-400 hover:text-spend hover:bg-spend/5 rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-spend hover:bg-spend/5 dark:hover:bg-spend/10 rounded-lg transition-colors cursor-pointer"
                   title="Delete Entry"
                 >
                   <Trash2 size={15} />
@@ -313,7 +313,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
         onClick={() => toggleDate(group.date)}
         className={cn(
           "w-full text-left p-4 sm:px-6 sm:py-4 transition-all cursor-pointer flex items-center justify-between gap-3",
-          expanded ? "bg-primary/[0.03]" : "hover:bg-slate-50/80"
+          expanded ? "bg-primary/[0.03] dark:bg-primary/[0.08]" : "hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
         )}
       >
         {/* Left: Chevron, Date, Entry Count */}
@@ -327,7 +327,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
 
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-black text-slate-800">
+              <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-white">
                 {formatDate(group.date)}
               </span>
               <span className="text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-md">
@@ -336,7 +336,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
             </div>
 
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] font-bold text-slate-400">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
                 Closing Bal: {formatCurrency(group.runningTotal)}
               </span>
               {isTuesday && (
@@ -363,7 +363,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                 </span>
               )}
             </div>
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">
+            <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">
               {expanded ? 'Click to collapse' : 'Click to view details'}
             </p>
           </div>
@@ -376,9 +376,9 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
     <div className="container mx-auto px-3 sm:px-6 pb-6 space-y-6 sm:space-y-8 max-w-5xl">
       {/* Sticky Header */}
       <div className="sticky top-0 z-30 pt-2 pb-2 sm:pt-4 sm:pb-3 pointer-events-none">
-        <header className="bg-white/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
+        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 dark:border-slate-800/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
           <div>
-            <h1 className="text-sm sm:text-lg font-black text-slate-800 tracking-tight leading-tight">Financial Ledger</h1>
+            <h1 className="text-sm sm:text-lg font-black text-slate-800 dark:text-white tracking-tight leading-tight">Financial Ledger</h1>
             <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider hidden sm:block">Reports & Analysis</p>
           </div>
 
@@ -391,7 +391,7 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                 "h-8 sm:h-9 px-3 sm:px-4 rounded-xl border transition-all flex items-center gap-2 text-xs font-black cursor-pointer shadow-xs active:scale-95",
                 filterMonth || isMonthDropdownOpen 
                   ? "bg-primary/10 border-primary/30 text-primary" 
-                  : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
+                  : "bg-slate-50 dark:bg-slate-800/80 border-slate-200/70 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
               )}
             >
               <span>
@@ -403,13 +403,13 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
             {isMonthDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setIsMonthDropdownOpen(false)} />
-                <div className="absolute top-full right-0 mt-2 min-w-[150px] bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-40 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full right-0 mt-2 min-w-[150px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-40 animate-in fade-in zoom-in-95 duration-200">
                   <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
                     <button 
                       onClick={() => { setFilterMonth(''); setIsMonthDropdownOpen(false); }}
                       className={cn(
-                        "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all",
-                        !filterMonth ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                        "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
+                        !filterMonth ? "bg-primary text-white shadow-sm" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                       )}
                     >
                       All Time
@@ -419,8 +419,8 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                         key={month}
                         onClick={() => { setFilterMonth(month); setIsMonthDropdownOpen(false); }}
                         className={cn(
-                          "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all",
-                          filterMonth === month ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                          "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
+                          filterMonth === month ? "bg-primary text-white shadow-sm" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                         )}
                       >
                         {new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}
@@ -570,10 +570,10 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
       </div>
 
       {/* Sticky Filters Row */}
-      <div className="sticky top-4 z-40 flex flex-col md:flex-row gap-3 bg-white/80 backdrop-blur-xl p-3 rounded-[2rem] shadow-premium border border-white/50 items-stretch md:items-center">
+      <div className="sticky top-4 z-40 flex flex-col md:flex-row gap-3 bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl p-3 rounded-[2rem] shadow-premium border border-white/50 dark:border-slate-800 items-stretch md:items-center transition-colors">
         
         {/* 1. Type Filter */}
-        <div className="flex p-1 bg-slate-50/50 rounded-2xl border border-slate-100 h-[50px] md:w-64 flex-shrink-0">
+        <div className="flex p-1 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/80 h-[50px] md:w-64 flex-shrink-0">
            {['all', 'income', 'spend'].map((type) => (
              <button
                key={type}
@@ -583,8 +583,8 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                  filterType === type 
                    ? (type === 'income' ? "bg-income text-white shadow-lg shadow-income/20" : 
                       type === 'spend' ? "bg-spend text-white shadow-lg shadow-spend/20" : 
-                      "bg-slate-900 text-white shadow-lg shadow-slate-900/20")
-                   : "text-slate-400 hover:text-slate-600"
+                      "bg-slate-900 dark:bg-amber-500 text-white shadow-lg shadow-slate-900/20 dark:shadow-amber-500/20")
+                   : "text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                )}
              >
                {type}
@@ -600,15 +600,15 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
             placeholder="Search transactions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-slate-50/50 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-bold text-slate-700 h-[50px] text-sm"
+            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all font-bold text-slate-700 dark:text-white h-[50px] text-sm"
           />
         </div>
       </div>
 
       <div className="space-y-3">
           {finalDisplayEntries.length === 0 ? (
-            <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-              <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+            <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
+              <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-500">
                  <Search size={32} />
               </div>
               <p className="text-slate-400 font-black uppercase text-sm tracking-widest">No matching records found</p>
@@ -625,14 +625,14 @@ const History = ({ entries = [], onDelete, onEdit, highlightedEntryId, setHighli
                 <div 
                   key={group.date} 
                   className={cn(
-                    "bg-white rounded-2xl md:rounded-[2rem] shadow-premium border border-slate-100/90 overflow-hidden transition-all duration-300",
+                    "bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2rem] shadow-premium border border-slate-100/90 dark:border-slate-800 overflow-hidden transition-all duration-300",
                     expanded && "ring-1 ring-primary/20 border-primary/30 shadow-md"
                   )}
                 >
                   {renderGroupRow(group, expanded)}
                   {expanded && (
-                    <div className="bg-slate-50/60 border-t border-slate-100 p-2.5 sm:p-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                      <div className="px-2 py-0.5 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400">
+                    <div className="bg-slate-50/60 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800 p-2.5 sm:p-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="px-2 py-0.5 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         <span>{formatDate(group.date)} · Transactions</span>
                         <span>{group.entries.length} Entries</span>
                       </div>

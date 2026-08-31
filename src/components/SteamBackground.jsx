@@ -50,29 +50,26 @@ export const SteamBackground = () => {
       const dist = Math.sqrt(dx * dx + dy * dy);
       mouse.speed = Math.min(dist, 60);
 
-      // Add to mouse trail
-      mouseTrail.unshift({ x: e.clientX, y: e.clientY, age: 0, size: 25 + Math.min(dist * 0.8, 40) });
-      if (mouseTrail.length > 25) mouseTrail.pop();
+      // Add to mouse trail (Subtle and minimal)
+      mouseTrail.unshift({ x: e.clientX, y: e.clientY, age: 0, size: 15 + Math.min(dist * 0.4, 20) });
+      if (mouseTrail.length > 15) mouseTrail.pop();
 
-      // Spawn vibrant billowing smoke puffs directly on cursor path
-      const spawnCount = Math.min(Math.ceil(dist / 8), 4);
-      for (let i = 0; i < spawnCount; i++) {
-        if (activePuffs.length < 80) {
-          activePuffs.push({
-            x: e.clientX + (Math.random() - 0.5) * 24,
-            y: e.clientY + (Math.random() - 0.5) * 24,
-            radius: 25 + Math.random() * 30,
-            maxRadius: 90 + Math.random() * 70,
-            growth: 1.2 + Math.random() * 1.4,
-            alpha: 0.45 + Math.random() * 0.25, // BOLD & CLEARLY VISIBLE
-            decay: 0.008 + Math.random() * 0.006,
-            vx: (dx * 0.06) + (Math.random() - 0.5) * 1.5,
-            vy: (dy * 0.06) - (1.0 + Math.random() * 1.2), // Rising steam speed
-            angle: Math.random() * Math.PI * 2,
-            angularVelocity: (Math.random() - 0.5) * 0.04,
-            color: Math.random() > 0.35 ? '245, 158, 11' : '234, 88, 12' // Warm Amber & Spice Gold
-          });
-        }
+      // Spawn occasional subtle soft smoke puffs on cursor path
+      if (dist > 12 && activePuffs.length < 20 && Math.random() > 0.4) {
+        activePuffs.push({
+          x: e.clientX + (Math.random() - 0.5) * 16,
+          y: e.clientY + (Math.random() - 0.5) * 16,
+          radius: 18 + Math.random() * 15,
+          maxRadius: 50 + Math.random() * 30,
+          growth: 0.6 + Math.random() * 0.6,
+          alpha: 0.08 + Math.random() * 0.05, // Very soft & non-distracting
+          decay: 0.005 + Math.random() * 0.004,
+          vx: (dx * 0.03) + (Math.random() - 0.5) * 0.8,
+          vy: (dy * 0.03) - (0.6 + Math.random() * 0.6),
+          angle: Math.random() * Math.PI * 2,
+          angularVelocity: (Math.random() - 0.5) * 0.02,
+          color: '245, 158, 11' // Warm Amber
+        });
       }
 
       prevPos = { x: e.clientX, y: e.clientY };
@@ -81,8 +78,8 @@ export const SteamBackground = () => {
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // Full-Width Rising Ambient Steam Columns (28 prominent steam wisps)
-    const ambientCount = 30;
+    // Minimal Subtle Ambient Steam Columns (6 soft gentle wisps)
+    const ambientCount = 6;
     class SteamColumn {
       constructor() {
         this.reset(true);
@@ -90,62 +87,56 @@ export const SteamBackground = () => {
 
       reset(initial = false) {
         this.x = Math.random() * width;
-        this.y = initial ? Math.random() * height : height + Math.random() * 60;
-        this.radius = 80 + Math.random() * 120;
-        this.maxRadius = this.radius * (1.7 + Math.random() * 0.6);
+        this.y = initial ? Math.random() * height : height + Math.random() * 40;
+        this.radius = 60 + Math.random() * 70;
+        this.maxRadius = this.radius * (1.4 + Math.random() * 0.4);
         this.alpha = 0;
-        this.maxAlpha = 0.22 + Math.random() * 0.16; // Bold, unmistakable visibility
-        this.vy = -0.7 - Math.random() * 1.1;
-        this.vx = (Math.random() - 0.5) * 0.6;
+        this.maxAlpha = 0.04 + Math.random() * 0.03; // Gentle, elegant background warmth
+        this.vy = -0.4 - Math.random() * 0.6;
+        this.vx = (Math.random() - 0.5) * 0.4;
         this.angle = Math.random() * Math.PI * 2;
-        this.angularVelocity = (Math.random() - 0.5) * 0.008;
+        this.angularVelocity = (Math.random() - 0.5) * 0.004;
         this.curlPhase = Math.random() * 100;
-        this.curlSpeed = 0.015 + Math.random() * 0.02;
+        this.curlSpeed = 0.01 + Math.random() * 0.015;
 
         const warmTones = [
           '245, 158, 11',  // Amber
-          '251, 191, 36',  // Bright Gold
-          '217, 119, 6',   // Rich Spice
-          '253, 186, 116'  // Warm Peach Cream
+          '251, 191, 36'   // Soft Gold
         ];
         this.color = warmTones[Math.floor(Math.random() * warmTones.length)];
       }
 
       update() {
         this.curlPhase += this.curlSpeed;
-        this.x += this.vx + Math.sin(this.curlPhase) * 1.2;
+        this.x += this.vx + Math.sin(this.curlPhase) * 0.8;
         this.y += this.vy;
         this.angle += this.angularVelocity;
 
         if (this.radius < this.maxRadius) {
-          this.radius += 0.25;
+          this.radius += 0.15;
         }
 
         // Calculate opacity based on altitude
         const lifeFraction = (height - this.y) / height;
-        if (lifeFraction < 0.12) {
-          this.alpha = (lifeFraction / 0.12) * this.maxAlpha;
+        if (lifeFraction < 0.15) {
+          this.alpha = (lifeFraction / 0.15) * this.maxAlpha;
         } else if (lifeFraction > 0.85) {
           this.alpha = ((1 - lifeFraction) / 0.15) * this.maxAlpha;
         } else {
           this.alpha = this.maxAlpha;
         }
 
-        // Magnetic Attraction & Swirl towards Mouse
+        // Gentle attraction towards cursor
         const dx = mouse.x - this.x;
         const dy = mouse.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const influenceRadius = 320;
+        const influenceRadius = 240;
 
         if (dist < influenceRadius && dist > 10) {
           const force = (1 - dist / influenceRadius);
           const angle = Math.atan2(dy, dx);
-          const tangentAngle = angle + Math.PI / 2;
-
-          // Pull towards mouse + swirl around cursor
-          this.x += Math.cos(angle) * force * 3.2 + Math.cos(tangentAngle) * force * (mouse.speed * 0.12 + 1.8);
-          this.y += Math.sin(angle) * force * 2.0 + Math.sin(tangentAngle) * force * (mouse.speed * 0.12 + 1.8) - force * 1.5;
-          this.angle += force * 0.04;
+          this.x += Math.cos(angle) * force * 1.2;
+          this.y += Math.sin(angle) * force * 0.8;
         }
 
         if (this.y < -this.radius || this.x < -this.radius || this.x > width + this.radius || this.alpha <= 0) {
@@ -154,16 +145,16 @@ export const SteamBackground = () => {
       }
 
       draw() {
-        if (this.alpha <= 0.005) return;
+        if (this.alpha <= 0.002) return;
 
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
 
         const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-        gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha * 1.4})`);
-        gradient.addColorStop(0.4, `rgba(${this.color}, ${this.alpha * 0.85})`);
-        gradient.addColorStop(0.75, `rgba(${this.color}, ${this.alpha * 0.3})`);
+        gradient.addColorStop(0, `rgba(${this.color}, ${this.alpha * 1.1})`);
+        gradient.addColorStop(0.5, `rgba(${this.color}, ${this.alpha * 0.6})`);
+        gradient.addColorStop(0.8, `rgba(${this.color}, ${this.alpha * 0.2})`);
         gradient.addColorStop(1, `rgba(${this.color}, 0)`);
 
         ctx.fillStyle = gradient;
@@ -183,35 +174,34 @@ export const SteamBackground = () => {
       if (!isRunning) return;
 
       // Mouse Smooth Spring Physics
-      const damp = 0.15;
+      const damp = 0.12;
       mouse.vx = (mouse.targetX - mouse.x) * damp;
       mouse.vy = (mouse.targetY - mouse.y) * damp;
       mouse.x += mouse.vx;
       mouse.y += mouse.vy;
-      mouse.speed *= 0.93;
+      mouse.speed *= 0.92;
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Prominent Warm Golden Radial Spotlight following cursor
+      // 1. Subtle warm ambient glow following cursor
       const spotGrad = ctx.createRadialGradient(
-        mouse.x, mouse.y, 20,
-        mouse.x, mouse.y, 420
+        mouse.x, mouse.y, 10,
+        mouse.x, mouse.y, 280
       );
-      spotGrad.addColorStop(0, 'rgba(251, 191, 36, 0.16)'); // Bold and warm
-      spotGrad.addColorStop(0.45, 'rgba(245, 158, 11, 0.08)');
-      spotGrad.addColorStop(0.8, 'rgba(217, 119, 6, 0.025)');
+      spotGrad.addColorStop(0, 'rgba(251, 191, 36, 0.035)');
+      spotGrad.addColorStop(0.6, 'rgba(245, 158, 11, 0.01)');
       spotGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
       ctx.fillStyle = spotGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Draw Full-Width Rising Steam Columns (Swirling towards mouse)
+      // 2. Draw Gentle Ambient Steam Wisps
       ambientSteam.forEach((p) => {
         p.update();
         p.draw();
       });
 
-      // 3. Draw Active Mouse Smoke Trail Ribbons
+      // 3. Draw Subtle Mouse Trail
       if (mouseTrail.length > 2) {
         ctx.save();
         for (let i = 0; i < mouseTrail.length - 1; i++) {
@@ -220,7 +210,7 @@ export const SteamBackground = () => {
           pt.age += 1;
 
           const progress = 1 - (i / mouseTrail.length);
-          const ribbonAlpha = progress * 0.28;
+          const ribbonAlpha = progress * 0.04;
 
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y);
@@ -234,7 +224,7 @@ export const SteamBackground = () => {
         ctx.restore();
       }
 
-      // 4. Draw Billowing Mouse Smoke Puffs
+      // 4. Draw Soft Micro Puffs
       for (let i = activePuffs.length - 1; i >= 0; i--) {
         const puff = activePuffs[i];
         puff.x += puff.vx;
@@ -253,9 +243,8 @@ export const SteamBackground = () => {
         ctx.rotate(puff.angle);
 
         const puffGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, puff.radius);
-        puffGrad.addColorStop(0, `rgba(${puff.color}, ${puff.alpha * 1.5})`);
-        puffGrad.addColorStop(0.4, `rgba(${puff.color}, ${puff.alpha * 0.9})`);
-        puffGrad.addColorStop(0.75, `rgba(${puff.color}, ${puff.alpha * 0.3})`);
+        puffGrad.addColorStop(0, `rgba(${puff.color}, ${puff.alpha * 1.1})`);
+        puffGrad.addColorStop(0.5, `rgba(${puff.color}, ${puff.alpha * 0.5})`);
         puffGrad.addColorStop(1, `rgba(${puff.color}, 0)`);
 
         ctx.fillStyle = puffGrad;
@@ -299,7 +288,7 @@ export const SteamBackground = () => {
       style={{
         width: '100vw',
         height: '100vh',
-        opacity: 1
+        opacity: 0.7
       }}
     />
   );

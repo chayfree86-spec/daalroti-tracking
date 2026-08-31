@@ -48,9 +48,9 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
           onClose();
         }}
         className={cn(
-          "h-10 w-10 rounded-xl font-bold transition-all flex items-center justify-center text-sm",
+          "h-10 w-10 rounded-xl font-bold transition-all flex items-center justify-center text-sm cursor-pointer",
           isSelected ? "bg-primary text-white shadow-lg shadow-primary/30" : 
-          isToday ? "bg-primary/10 text-primary" : "text-slate-600 hover:bg-slate-100"
+          isToday ? "bg-primary/10 text-primary border border-primary/30" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
         )}
       >
         {d}
@@ -59,22 +59,22 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-6 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
+    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-[100] p-6 animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 transition-colors">
+        <div className="p-6 bg-slate-900 dark:bg-slate-950 text-white flex justify-between items-center">
           <div className="flex flex-col">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Select Date</p>
             <div className="flex items-center gap-4 mt-1">
-              <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+              <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
                 <ChevronLeft size={20} className="text-white" />
               </button>
               <h3 className="text-xl font-black min-w-[140px] text-center">{months[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
-              <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+              <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
                 <ChevronRight size={20} className="text-white" />
               </button>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors self-start">
+          <button onClick={onClose} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors self-start cursor-pointer">
             <X size={20} />
           </button>
         </div>
@@ -82,7 +82,7 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
             {['S','M','T','W','T','F','S'].map((d, i) => (
-              <span key={i} className="text-[10px] font-black text-slate-300 uppercase">{d}</span>
+              <span key={i} className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">{d}</span>
             ))}
           </div>
 
@@ -91,14 +91,14 @@ const CustomCalendar = ({ selectedDate, onSelect, onClose }) => {
           </div>
         </div>
 
-        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+        <div className="p-4 bg-slate-50 dark:bg-slate-950/80 border-t border-slate-100 dark:border-slate-800 flex justify-center">
           <button 
             type="button"
             onClick={() => {
               onSelect(todayIST());
               onClose();
             }}
-            className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
+            className="text-xs font-black text-primary uppercase tracking-widest hover:underline cursor-pointer"
           >
             Today
           </button>

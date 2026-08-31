@@ -12,16 +12,16 @@ import { ComparisonView } from '../components/ComparisonView';
 
 // Transparent modern colorful pastel palette for Categories
 const categoryPillStyles = [
-  'bg-amber-500/10 text-amber-900 border-amber-300/60',
-  'bg-blue-500/10 text-blue-900 border-blue-300/60',
-  'bg-emerald-500/10 text-emerald-900 border-emerald-300/60',
-  'bg-purple-500/10 text-purple-900 border-purple-300/60',
-  'bg-rose-500/10 text-rose-900 border-rose-300/60',
-  'bg-indigo-500/10 text-indigo-900 border-indigo-300/60',
-  'bg-teal-500/10 text-teal-900 border-teal-300/60',
-  'bg-orange-500/10 text-orange-900 border-orange-300/60',
-  'bg-cyan-500/10 text-cyan-900 border-cyan-300/60',
-  'bg-fuchsia-500/10 text-fuchsia-900 border-fuchsia-300/60',
+  'bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/60 dark:border-amber-500/40',
+  'bg-blue-500/10 text-blue-900 dark:text-blue-300 border-blue-300/60 dark:border-blue-500/40',
+  'bg-emerald-500/10 text-emerald-900 dark:text-emerald-300 border-emerald-300/60 dark:border-emerald-500/40',
+  'bg-purple-500/10 text-purple-900 dark:text-purple-300 border-purple-300/60 dark:border-purple-500/40',
+  'bg-rose-500/10 text-rose-900 dark:text-rose-300 border-rose-300/60 dark:border-rose-500/40',
+  'bg-indigo-500/10 text-indigo-900 dark:text-indigo-300 border-indigo-300/60 dark:border-indigo-500/40',
+  'bg-teal-500/10 text-teal-900 dark:text-teal-300 border-teal-300/60 dark:border-teal-500/40',
+  'bg-orange-500/10 text-orange-900 dark:text-orange-300 border-orange-300/60 dark:border-orange-500/40',
+  'bg-cyan-500/10 text-cyan-900 dark:text-cyan-300 border-cyan-300/60 dark:border-cyan-500/40',
+  'bg-fuchsia-500/10 text-fuchsia-900 dark:text-fuchsia-300 border-fuchsia-300/60 dark:border-fuchsia-500/40',
 ];
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -36,7 +36,9 @@ const CustomDropdown = ({ value, options, onChange, label, className }) => {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95",
-          isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-slate-50 border-slate-200/70 text-slate-700 hover:bg-slate-100"
+          isOpen 
+            ? "bg-primary/10 border-primary/30 text-primary" 
+            : "bg-slate-50 dark:bg-slate-800/80 border-slate-200/70 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
         )}
       >
         <span>{options.find(o => o.value === value)?.label || label}</span>
@@ -46,7 +48,7 @@ const CustomDropdown = ({ value, options, onChange, label, className }) => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-200">
             <div className="max-h-60 overflow-y-auto no-scrollbar">
               {options.map((opt) => (
                 <button
@@ -57,7 +59,9 @@ const CustomDropdown = ({ value, options, onChange, label, className }) => {
                   }}
                   className={cn(
                     "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                    value === opt.value ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                    value === opt.value 
+                      ? "bg-primary text-white shadow-sm" 
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                 >
                   {opt.label}
@@ -320,10 +324,10 @@ const Analytics = ({ entries = [], syncStatus }) => {
       
       {/* 1. Header with Month / Year Filters */}
       <div className="sticky top-0 z-30 pt-2 pb-2 sm:pt-4 sm:pb-3 pointer-events-none">
-        <header className="bg-white/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
+        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 dark:border-slate-800/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all pointer-events-auto">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div>
-              <h1 className="text-sm sm:text-lg font-black text-slate-800 tracking-tight leading-tight">
+              <h1 className="text-sm sm:text-lg font-black text-slate-800 dark:text-white tracking-tight leading-tight">
                 Business <span className="text-primary">Analytics</span>
               </h1>
               <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider hidden sm:block">
@@ -338,7 +342,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
                 setViewMode('comparison');
                 window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }}
-              className="hidden md:flex h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-primary/10 to-primary/20 hover:from-primary/20 hover:to-primary/30 border border-primary/30 text-primary transition-all items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
+              className="hidden md:flex h-8 sm:h-9 px-3 sm:px-4 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 hover:from-primary/20 hover:to-primary/30 border border-primary/30 text-primary transition-all items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
               title="Compare 12-Month Performance"
             >
               <ArrowRightLeft size={13} className="text-primary shrink-0" />
@@ -523,14 +527,14 @@ const Analytics = ({ entries = [], syncStatus }) => {
       </div>
 
       {/* 3. Category & Vendor Expense Breakdown (The Core Highlight) */}
-      <section className="bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 space-y-5 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+      <section className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 dark:border-slate-800 space-y-5 sm:space-y-6 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-spend/10 text-spend flex items-center justify-center">
                 <Tag size={16} />
               </div>
-              <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">
+              <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">
                 Category & Vendor Expenses
               </h2>
             </div>
@@ -540,7 +544,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-wider bg-slate-100 px-3 py-1.5 rounded-xl">
+            <span className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
               {stats.categoryBreakdown.length} Categories
             </span>
             <span className="text-[10px] sm:text-xs font-black text-spend bg-spend/10 border border-spend/20 px-3 py-1.5 rounded-xl">
@@ -550,7 +554,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
         </div>
 
         {stats.categoryBreakdown.length === 0 ? (
-          <div className="text-center py-10 text-slate-400 font-bold uppercase text-xs tracking-widest bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+          <div className="text-center py-10 text-slate-400 font-bold uppercase text-xs tracking-widest bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
             No expenses recorded for this period
           </div>
         ) : (
@@ -560,11 +564,11 @@ const Analytics = ({ entries = [], syncStatus }) => {
               return (
                 <div 
                   key={cat.name}
-                  className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 flex flex-col justify-between gap-3 hover:bg-white hover:shadow-sm hover:border-slate-200 transition-all duration-200"
+                  className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/80 flex flex-col justify-between gap-3 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-200"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-6 h-6 rounded-lg bg-slate-200/80 text-slate-600 flex items-center justify-center text-[10px] font-black shrink-0">
+                      <span className="w-6 h-6 rounded-lg bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-[10px] font-black shrink-0">
                         #{idx + 1}
                       </span>
                       <div className="min-w-0">
@@ -574,14 +578,14 @@ const Analytics = ({ entries = [], syncStatus }) => {
                         )}>
                           {cat.name}
                         </span>
-                        <span className="ml-2 text-[10px] font-bold text-slate-400">
+                        <span className="ml-2 text-[10px] font-bold text-slate-400 dark:text-slate-500">
                           {cat.count} {cat.count === 1 ? 'entry' : 'entries'}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <p className="text-base font-black text-slate-800 tracking-tight">
+                      <p className="text-base font-black text-slate-800 dark:text-white tracking-tight">
                         -{formatCurrency(cat.totalSpend)}
                       </p>
                       <span className="text-[10px] font-black text-spend uppercase">
@@ -592,7 +596,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
 
                   {/* Visual Progress Bar */}
                   <div className="space-y-1.5">
-                    <div className="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-slate-200/60 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                       <div 
                         className="bg-spend h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, Math.max(3, cat.percentage))}%` }}
@@ -600,7 +604,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
                     </div>
 
                     {/* Cash vs Online Split */}
-                    <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 pt-0.5">
+                    <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 dark:text-slate-500 pt-0.5">
                       <span className="flex items-center gap-1">
                         <Wallet size={11} className="text-amber-500" />
                         Cash: {formatCurrency(cat.cashSpend)}
@@ -622,10 +626,10 @@ const Analytics = ({ entries = [], syncStatus }) => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left: Income vs Expense Trend (8 cols) */}
-        <div className="lg:col-span-8 bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 space-y-5 flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 dark:border-slate-800 space-y-5 flex flex-col justify-between transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="space-y-0.5">
-              <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight">
+              <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white tracking-tight">
                 Income vs Expense Flow
               </h2>
               <p className="text-slate-400 text-xs font-bold">
@@ -638,23 +642,23 @@ const Analytics = ({ entries = [], syncStatus }) => {
               <div className="flex items-center gap-3 text-xs font-bold mr-2">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-income" />
-                  <span className="text-slate-600 text-[11px]">Income</span>
+                  <span className="text-slate-600 dark:text-slate-300 text-[11px]">Income</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-spend" />
-                  <span className="text-slate-600 text-[11px]">Expense</span>
+                  <span className="text-slate-600 dark:text-slate-300 text-[11px]">Expense</span>
                 </div>
               </div>
 
               {/* Weekly vs Daily Toggle when viewing single month */}
               {!isAllTime && (
-                <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+                <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                   <button
                     type="button"
                     onClick={() => setChartViewMode('weekly')}
                     className={cn(
                       "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
-                      chartViewMode === 'weekly' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                      chartViewMode === 'weekly' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
                     )}
                   >
                     Weekly
@@ -664,7 +668,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
                     onClick={() => setChartViewMode('daily')}
                     className={cn(
                       "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer",
-                      chartViewMode === 'daily' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                      chartViewMode === 'daily' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
                     )}
                   >
                     Daily
@@ -678,7 +682,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
             <ResponsiveContainer width="100%" height="100%">
               {isAllTime ? (
                 <BarChart data={stats.monthlyData} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
                   <XAxis 
                     dataKey="month" 
                     axisLine={false} 
@@ -693,7 +697,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
                     tickFormatter={(v) => `₹${v >= 100000 ? (v/100000).toFixed(1) + 'L' : (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v)}`}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '1rem', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
+                    contentStyle={{ borderRadius: '1rem', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#f8fafc', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}
                     formatter={(val) => formatCurrency(val)}
                   />
                   <Bar dataKey="income" name="Income" fill="#10B981" radius={[4, 4, 0, 0]} barSize={16} />
@@ -704,7 +708,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
                   data={chartViewMode === 'weekly' ? stats.weeklyData : stats.dailyData} 
                   barGap={chartViewMode === 'weekly' ? 8 : 2}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
                   <XAxis 
                     dataKey={chartViewMode === 'weekly' ? "label" : "displayDate"}
                     axisLine={false} 
@@ -718,7 +722,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
                     tickFormatter={(v) => `₹${v >= 100000 ? (v/100000).toFixed(1) + 'L' : (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v)}`}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '1rem', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}
+                    contentStyle={{ borderRadius: '1rem', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#f8fafc', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}
                     formatter={(val) => formatCurrency(val)}
                   />
                   <Bar 
@@ -742,9 +746,9 @@ const Analytics = ({ entries = [], syncStatus }) => {
         </div>
 
         {/* Right: Cash vs Online Asset Ratio (4 cols) */}
-        <div className="lg:col-span-4 bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 dark:border-slate-800 flex flex-col justify-between space-y-4 transition-colors">
           <div className="space-y-1">
-            <h2 className="text-lg font-black text-slate-800 tracking-tight">Asset Ratio</h2>
+            <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Asset Ratio</h2>
             <p className="text-slate-400 text-xs font-bold">Cash in Hand vs Online Bank</p>
           </div>
 
@@ -770,27 +774,27 @@ const Analytics = ({ entries = [], syncStatus }) => {
             
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cash Ratio</span>
-              <span className="text-2xl font-black text-slate-800">
+              <span className="text-2xl font-black text-slate-800 dark:text-white">
                 {Math.round((stats.cashBalance / ((stats.cashBalance + stats.onlineBalance) || 1)) * 100)}%
               </span>
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-100">
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span className="text-xs font-bold text-slate-700">Cash in hand</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Cash in hand</span>
               </div>
-              <span className="text-xs font-black text-amber-700">{formatCurrency(stats.cashBalance)}</span>
+              <span className="text-xs font-black text-amber-700 dark:text-amber-400">{formatCurrency(stats.cashBalance)}</span>
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-xs font-bold text-slate-700">Online / Bank</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Online / Bank</span>
               </div>
-              <span className="text-xs font-black text-emerald-700">{formatCurrency(stats.onlineBalance)}</span>
+              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">{formatCurrency(stats.onlineBalance)}</span>
             </div>
           </div>
         </div>
@@ -801,13 +805,13 @@ const Analytics = ({ entries = [], syncStatus }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Top High Value Transactions */}
-        <div className="bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 dark:border-slate-800 space-y-4 transition-colors">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Award size={16} />
               </div>
-              <h2 className="text-base sm:text-lg font-black text-slate-800">Top Major Entries</h2>
+              <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-white">Top Major Entries</h2>
             </div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{periodLabel}</span>
           </div>
@@ -816,7 +820,7 @@ const Analytics = ({ entries = [], syncStatus }) => {
             {stats.highValueEntries.map((entry, idx) => (
               <div 
                 key={idx} 
-                className="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-2xl border border-slate-100/80 hover:bg-white hover:shadow-xs transition-all"
+                className="flex items-center justify-between p-3.5 bg-slate-50/80 dark:bg-slate-800/60 rounded-2xl border border-slate-100/80 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800 hover:shadow-xs transition-all"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn(
@@ -826,17 +830,17 @@ const Analytics = ({ entries = [], syncStatus }) => {
                     {entry.isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-black text-slate-800 truncate leading-tight">
+                    <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-white truncate leading-tight">
                       {entry.remark || (entry.isIncome ? 'Income' : 'Spend')}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
                       {formatDate(entry.date)}
                     </p>
                   </div>
                 </div>
                 <p className={cn(
                   "text-sm sm:text-base font-black shrink-0",
-                  entry.isIncome ? "text-income" : "text-slate-800"
+                  entry.isIncome ? "text-income" : "text-slate-800 dark:text-slate-100"
                 )}>
                   {entry.isIncome ? '+' : '-'}{formatCurrency(entry.total)}
                 </p>
@@ -852,27 +856,27 @@ const Analytics = ({ entries = [], syncStatus }) => {
         </div>
 
         {/* Daily Performance & Saving Efficiency */}
-        <div className="bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 space-y-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-premium border border-slate-100/90 dark:border-slate-800 space-y-4 flex flex-col justify-between transition-colors">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-xl bg-income/10 text-income flex items-center justify-center">
                 <Activity size={16} />
               </div>
-              <h2 className="text-base sm:text-lg font-black text-slate-800">Financial Efficiency</h2>
+              <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-white">Financial Efficiency</h2>
             </div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Averages</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-1">
-              <p className="text-emerald-700 text-[10px] font-black uppercase tracking-wider">Savings Rate</p>
-              <p className="text-2xl font-black text-emerald-800">
+            <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50 space-y-1">
+              <p className="text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">Savings Rate</p>
+              <p className="text-2xl font-black text-emerald-800 dark:text-emerald-200">
                 {Math.max(0, Math.round(((stats.totalIncome - stats.totalSpend) / (stats.totalIncome || 1)) * 100))}%
               </p>
-              <p className="text-[9px] font-bold text-emerald-600">Saved from income</p>
+              <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">Saved from income</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-1">
+            <div className="p-4 rounded-2xl bg-slate-900 dark:bg-slate-950 border border-transparent dark:border-slate-800 text-white space-y-1">
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Active Days</p>
               <p className="text-2xl font-black text-white">
                 {stats.activeDaysCount} Days
@@ -880,20 +884,20 @@ const Analytics = ({ entries = [], syncStatus }) => {
               <p className="text-[9px] font-bold text-slate-400">Transactions recorded</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-100 space-y-1">
-              <p className="text-amber-700 text-[10px] font-black uppercase tracking-wider">Avg Daily Income</p>
-              <p className="text-base sm:text-lg font-black text-amber-800">
+            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 space-y-1">
+              <p className="text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">Avg Daily Income</p>
+              <p className="text-base sm:text-lg font-black text-amber-800 dark:text-amber-200">
                 {formatCurrency(Math.round(stats.totalIncome / (stats.activeDaysCount || 1)))}
               </p>
-              <p className="text-[9px] font-bold text-amber-600">Per active day</p>
+              <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400">Per active day</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-100 space-y-1">
-              <p className="text-rose-700 text-[10px] font-black uppercase tracking-wider">Avg Daily Spend</p>
-              <p className="text-base sm:text-lg font-black text-rose-800">
+            <div className="p-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50 space-y-1">
+              <p className="text-rose-700 dark:text-rose-400 text-[10px] font-black uppercase tracking-wider">Avg Daily Spend</p>
+              <p className="text-base sm:text-lg font-black text-rose-800 dark:text-rose-200">
                 {formatCurrency(Math.round(stats.totalSpend / (stats.activeDaysCount || 1)))}
               </p>
-              <p className="text-[9px] font-bold text-rose-600">Per active day</p>
+              <p className="text-[9px] font-bold text-rose-600 dark:text-rose-400">Per active day</p>
             </div>
           </div>
         </div>

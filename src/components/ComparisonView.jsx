@@ -27,16 +27,16 @@ const categoryColorPalette = [
 ];
 
 const categoryPillStyles = [
-  'bg-amber-500/10 text-amber-900 border-amber-300/60',
-  'bg-blue-500/10 text-blue-900 border-blue-300/60',
-  'bg-emerald-500/10 text-emerald-900 border-emerald-300/60',
-  'bg-purple-500/10 text-purple-900 border-purple-300/60',
-  'bg-rose-500/10 text-rose-900 border-rose-300/60',
-  'bg-indigo-500/10 text-indigo-900 border-indigo-300/60',
-  'bg-teal-500/10 text-teal-900 border-teal-300/60',
-  'bg-orange-500/10 text-orange-900 border-orange-300/60',
-  'bg-cyan-500/10 text-cyan-900 border-cyan-300/60',
-  'bg-fuchsia-500/10 text-fuchsia-900 border-fuchsia-300/60',
+  'bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-300/60 dark:border-amber-500/40',
+  'bg-blue-500/10 text-blue-900 dark:text-blue-300 border-blue-300/60 dark:border-blue-500/40',
+  'bg-emerald-500/10 text-emerald-900 dark:text-emerald-300 border-emerald-300/60 dark:border-emerald-500/40',
+  'bg-purple-500/10 text-purple-900 dark:text-purple-300 border-purple-300/60 dark:border-purple-500/40',
+  'bg-rose-500/10 text-rose-900 dark:text-rose-300 border-rose-300/60 dark:border-rose-500/40',
+  'bg-indigo-500/10 text-indigo-900 dark:text-indigo-300 border-indigo-300/60 dark:border-indigo-500/40',
+  'bg-teal-500/10 text-teal-900 dark:text-teal-300 border-teal-300/60 dark:border-teal-500/40',
+  'bg-orange-500/10 text-orange-900 dark:text-orange-300 border-orange-300/60 dark:border-orange-500/40',
+  'bg-cyan-500/10 text-cyan-900 dark:text-cyan-300 border-cyan-300/60 dark:border-cyan-500/40',
+  'bg-fuchsia-500/10 text-fuchsia-900 dark:text-fuchsia-300 border-fuchsia-300/60 dark:border-fuchsia-500/40',
 ];
 
 // Custom Year Dropdown Component
@@ -49,7 +49,9 @@ const YearDropdown = ({ value, options, onChange }) => {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-9 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-2 cursor-pointer shadow-xs active:scale-95",
-          isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+          isOpen 
+            ? "bg-primary/10 border-primary/30 text-primary" 
+            : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
         )}
       >
         <span>Year {value}</span>
@@ -59,7 +61,7 @@ const YearDropdown = ({ value, options, onChange }) => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-1 min-w-[120px] animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-1 min-w-[120px] animate-in fade-in zoom-in-95 duration-150">
             {options.map((yr) => (
               <button
                 key={yr}
@@ -69,7 +71,7 @@ const YearDropdown = ({ value, options, onChange }) => {
                 }}
                 className={cn(
                   "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                  value === yr ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+                  value === yr ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
                 {yr}
@@ -100,7 +102,9 @@ const MonthDropdown = ({ value, onChange, selectedYear }) => {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "h-9 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all border whitespace-nowrap flex items-center gap-2 cursor-pointer shadow-xs active:scale-95",
-          isOpen ? "bg-primary/10 border-primary/30 text-primary" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+          isOpen 
+            ? "bg-primary/10 border-primary/30 text-primary" 
+            : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
         )}
       >
         <span>{value === 'all' ? 'All Months' : monthsList[Number(value) - 1]}</span>
@@ -110,12 +114,12 @@ const MonthDropdown = ({ value, onChange, selectedYear }) => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden py-1 min-w-[140px] max-h-64 overflow-y-auto no-scrollbar animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden py-1 min-w-[140px] max-h-64 overflow-y-auto no-scrollbar animate-in fade-in zoom-in-95 duration-150">
             <button
               onClick={() => { onChange('all'); setIsOpen(false); }}
               className={cn(
                 "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                value === 'all' ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+                value === 'all' ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
             >
               All Months
@@ -129,7 +133,7 @@ const MonthDropdown = ({ value, onChange, selectedYear }) => {
                 }}
                 className={cn(
                   "w-full text-left px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer",
-                  value === m.value ? "bg-primary text-white" : "text-slate-600 hover:bg-slate-50"
+                  value === m.value ? "bg-primary text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
                 {m.label}
@@ -476,14 +480,14 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
       <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
         
         {/* Top Drilldown Header */}
-        <div className="bg-white/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 min-h-[56px] sm:min-h-[64px] transition-all">
+        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 dark:border-slate-800/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 min-h-[56px] sm:min-h-[64px] transition-all">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               onClick={() => {
                 setSelectedCategory(null);
                 window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 hover:bg-primary/10 hover:text-primary text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs shrink-0"
               title="Back to Categories"
             >
               <ArrowLeft size={18} />
@@ -494,11 +498,11 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   {selectedCategory}
                 </span>
                 {drilldownCategoryMeta?.isMergedGroup && (
-                  <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/80 text-[10px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
                     <Layers size={10} /> Merged ({drilldownCategoryMeta.subCategories.length})
                   </span>
                 )}
-                <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
                   Year {selectedYear}
                 </span>
               </div>
@@ -520,135 +524,113 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                 setSelectedCategory(null);
                 window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-xs whitespace-nowrap"
+              className="h-9 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
             >
-              Back
+              <X size={14} />
+              <span className="hidden sm:inline">Close</span>
             </button>
           </div>
         </div>
 
-        {/* Merged Group Info Pill Banner if Applicable */}
-        {drilldownCategoryMeta?.isMergedGroup && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-300/70 flex items-center gap-2 text-xs font-bold text-amber-950 flex-wrap">
-            <span className="font-black flex items-center gap-1.5 text-amber-800 shrink-0">
-              <Layers size={14} /> Includes transactions from merged categories:
-            </span>
-            {drilldownCategoryMeta.subCategories.map((sub, i) => (
-              <span key={i} className="px-2.5 py-0.5 rounded-lg bg-white text-slate-700 border border-amber-200 text-[11px] font-black">
-                {sub}
+        {/* Drilldown Summary KPI Card */}
+        <div className="p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full text-slate-300">
+                {drilldownMonthFilter === 'all' ? `Year ${selectedYear} Total` : `${monthsList[Number(drilldownMonthFilter)-1]} ${selectedYear}`}
               </span>
-            ))}
-          </div>
-        )}
+              <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">
+                -{formatCurrency(drilldownTotals.totalSpend)}
+              </h2>
+              <p className="text-xs font-bold text-slate-400 mt-0.5">
+                {drilldownTotals.count} Transactions recorded
+              </p>
+            </div>
 
-        {/* 3 Summary Cards for Drilldown */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Total Category Spend */}
-          <div className="p-5 sm:p-6 rounded-[2rem] bg-gradient-to-br from-rose-700 via-spend to-rose-950 text-white shadow-xl space-y-2 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-rose-100">Total Spend ({drilldownMonthFilter === 'all' ? selectedYear : monthsList[Number(drilldownMonthFilter)-1]})</span>
-              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-                <Tag size={16} />
+            {/* Cash vs Online Split */}
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 shrink-0">
+              <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <Wallet size={14} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Cash Spent</p>
+                  <p className="text-xs sm:text-sm font-black text-amber-400 whitespace-nowrap">{formatCurrency(drilldownTotals.cashSpend)}</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <Smartphone size={14} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Online Spent</p>
+                  <p className="text-xs sm:text-sm font-black text-emerald-400 whitespace-nowrap">{formatCurrency(drilldownTotals.onlineSpend)}</p>
+                </div>
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black tracking-tight">
-              -{formatCurrency(drilldownTotals.totalSpend)}
-            </div>
-            <p className="text-xs font-bold text-rose-100/80">
-              {drilldownTotals.count} transactions recorded
-            </p>
-          </div>
-
-          {/* Cash Spend */}
-          <div className="p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 shadow-premium space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cash Payment</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                <Wallet size={16} />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-amber-600">
-              -{formatCurrency(drilldownTotals.cashSpend)}
-            </div>
-            <p className="text-xs font-bold text-slate-400">
-              Direct cash collection/spend
-            </p>
-          </div>
-
-          {/* Online Spend */}
-          <div className="p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 shadow-premium space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Online / Bank UPI</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                <Smartphone size={16} />
-              </div>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-600">
-              -{formatCurrency(drilldownTotals.onlineSpend)}
-            </div>
-            <p className="text-xs font-bold text-slate-400">
-              Bank UPI / digital transfer
-            </p>
           </div>
         </div>
 
-        {/* Detailed Transactions List Table */}
-        <div className="bg-white rounded-[2.5rem] shadow-premium border border-slate-100 overflow-hidden">
-          <div className="p-5 sm:p-7 border-b border-slate-100 flex items-center justify-between">
+        {/* Drilldown Detailed Transaction Table */}
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-premium border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+          <div className="p-5 sm:p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2">
-                <Receipt size={18} className="text-spend" />
-                Transaction History ({drilldownEntries.length} Records)
+              <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Receipt size={18} className="text-primary" />
+                <span>Transactions Ledger</span>
               </h3>
               <p className="text-xs font-bold text-slate-400 mt-0.5">
-                Complete date-wise line items for {selectedCategory} in Year {selectedYear}
+                Exact date, category tags, payment split & amounts
               </p>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 px-3.5 py-1.5 rounded-full font-bold">
-              {drilldownMonthFilter === 'all' ? 'All Months' : monthsList[Number(drilldownMonthFilter)-1]}
+            <span className="text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-xl">
+              {drilldownEntries.length} Items
             </span>
           </div>
 
           {drilldownEntries.length === 0 ? (
             <div className="text-center py-16 text-slate-400 font-bold text-sm">
-              No transactions found for this category in the selected filter.
+              No transactions recorded for this category in selected period.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/90 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
                     <th className="py-4 px-4 sm:px-6">Date</th>
-                    <th className="py-4 px-4 sm:px-6">Remark / Original Category</th>
+                    <th className="py-4 px-4 sm:px-6">Description / Item</th>
                     <th className="py-4 px-4 sm:px-6">Payment Mode</th>
                     <th className="py-4 px-4 sm:px-6 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
-                  {drilldownEntries.map((e, idx) => {
-                    const cash = Number(e.cash_spend || e.cashSpend) || 0;
-                    const online = Number(e.online_spend || e.onlineSpend) || 0;
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200">
+                  {drilldownEntries.map((entry, idx) => {
+                    const cash = Number(entry.cash_spend || entry.cashSpend) || 0;
+                    const online = Number(entry.online_spend || entry.onlineSpend) || 0;
                     const total = cash + online;
-                    const originalTag = (e.category || e.remark || '').trim();
+                    const originalTag = entry.category || entry.remark;
 
                     return (
-                      <tr key={e.id || idx} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={entry.id || idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                         {/* Date */}
                         <td className="py-4 px-4 sm:px-6 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Calendar size={14} className="text-slate-400" />
-                            <span className="font-black text-slate-800 text-sm">{formatDate(e.date)}</span>
+                            <Calendar size={13} className="text-slate-400" />
+                            <span className="font-black text-slate-800 dark:text-white text-xs sm:text-sm">
+                              {formatDate(entry.date)}
+                            </span>
                           </div>
                         </td>
 
-                        {/* Remark */}
+                        {/* Description */}
                         <td className="py-4 px-4 sm:px-6">
-                          <div className="space-y-1">
-                            <span className="font-bold text-slate-700 text-sm block">
-                              {e.remark || e.category || '—'}
-                            </span>
+                          <div className="space-y-0.5">
+                            <p className="font-black text-slate-800 dark:text-white text-sm">
+                              {entry.remark || entry.category || 'Expense'}
+                            </p>
                             {drilldownCategoryMeta?.isMergedGroup && originalTag && originalTag.toLowerCase() !== selectedCategory.toLowerCase() && (
-                              <span className="inline-block text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                              <span className="inline-block text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60">
                                 Original: {originalTag}
                               </span>
                             )}
@@ -659,13 +641,13 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                         <td className="py-4 px-4 sm:px-6">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {cash > 0 && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 text-[11px] font-black border border-amber-200/60">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[11px] font-black border border-amber-200/60 dark:border-amber-800/60">
                                 <Wallet size={11} />
                                 Cash: ₹{cash.toLocaleString()}
                               </span>
                             )}
                             {online > 0 && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-black border border-emerald-200/60">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[11px] font-black border border-emerald-200/60 dark:border-emerald-800/60">
                                 <Smartphone size={11} />
                                 Online: ₹{online.toLocaleString()}
                               </span>
@@ -675,7 +657,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
 
                         {/* Total Amount */}
                         <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
-                          <span className="font-black text-rose-600 text-base">
+                          <span className="font-black text-rose-600 dark:text-rose-400 text-sm sm:text-base">
                             -{formatCurrency(total)}
                           </span>
                         </td>
@@ -699,17 +681,17 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
       
       {/* 1. Top In-Page Header & Navigation Bar */}
-      <div className="bg-white/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all">
+      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-6 sm:py-3 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100/90 dark:border-slate-800/90 flex items-center justify-between gap-2.5 min-h-[56px] sm:min-h-[64px] transition-all">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
             onClick={onBack}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 hover:bg-primary/10 hover:text-primary text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs shrink-0"
             title="Back to Monthly Analytics"
           >
             <ArrowLeft size={18} />
           </button>
           <div className="min-w-0">
-            <h2 className="text-sm sm:text-lg font-black text-slate-800 tracking-tight leading-tight truncate">
+            <h2 className="text-sm sm:text-lg font-black text-slate-800 dark:text-white tracking-tight leading-tight truncate">
               12-Month <span className="text-primary">Comparison</span>
             </h2>
             <p className="text-slate-400 font-bold text-[9px] sm:text-[10px] uppercase tracking-wider truncate hidden sm:block">
@@ -721,12 +703,12 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Desktop Only Inline Segmented Tabs */}
-          <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               onClick={() => setComparisonSection('all')}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap",
-                comparisonSection === 'all' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                comparisonSection === 'all' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
               )}
             >
               Full Overview
@@ -735,7 +717,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
               onClick={() => setComparisonSection('table')}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap",
-                comparisonSection === 'table' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                comparisonSection === 'table' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
               )}
             >
               12-Month Table
@@ -744,7 +726,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
               onClick={() => setComparisonSection('categories')}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap",
-                comparisonSection === 'categories' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                comparisonSection === 'categories' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
               )}
             >
               Categories ({categoryComparison.length})
@@ -760,12 +742,12 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
       </div>
 
       {/* Mobile-Only Clean Segmented Tab Control */}
-      <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl md:hidden text-center -mt-2">
+      <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl md:hidden text-center -mt-2">
         <button
           onClick={() => setComparisonSection('all')}
           className={cn(
             "py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer truncate",
-            comparisonSection === 'all' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+            comparisonSection === 'all' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
           )}
         >
           Overview
@@ -774,7 +756,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
           onClick={() => setComparisonSection('table')}
           className={cn(
             "py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer truncate",
-            comparisonSection === 'table' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+            comparisonSection === 'table' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
           )}
         >
           Table
@@ -783,7 +765,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
           onClick={() => setComparisonSection('categories')}
           className={cn(
             "py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer truncate",
-            comparisonSection === 'categories' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+            comparisonSection === 'categories' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
           )}
         >
           Categories ({categoryComparison.length})
@@ -908,10 +890,10 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
 
       {/* 3. 12-Month Visual Bar Chart (With Amount Values) */}
       {(comparisonSection === 'all' || comparisonSection === 'table') && (
-        <div className="bg-white p-5 sm:p-7 rounded-[2.5rem] shadow-premium border border-slate-100 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2.5rem] shadow-premium border border-slate-100 dark:border-slate-800 space-y-5 transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2.5">
+              <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <Layers size={16} />
                 </div>
@@ -923,12 +905,12 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
             </div>
 
             {/* Metric Mode Filter */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-center">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start sm:self-center">
               <button
                 onClick={() => setActiveMetric('all')}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
-                  activeMetric === 'all' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  activeMetric === 'all' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 )}
               >
                 All (Inc / Exp / Net)
@@ -937,7 +919,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                 onClick={() => setActiveMetric('income-expense')}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
-                  activeMetric === 'income-expense' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  activeMetric === 'income-expense' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 )}
               >
                 Income vs Expense
@@ -946,7 +928,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                 onClick={() => setActiveMetric('savings')}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer",
-                  activeMetric === 'savings' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
+                  activeMetric === 'savings' ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"
                 )}
               >
                 Net Savings Only
@@ -962,12 +944,12 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                 margin={{ top: 20, right: 10, left: -15, bottom: 0 }}
                 barGap={3}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
                 <XAxis 
                   dataKey="shortName" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} 
+                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} 
                 />
                 <YAxis 
                   axisLine={false} 
@@ -979,7 +961,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                 <Legend 
                   verticalAlign="top" 
                   height={40} 
-                  formatter={(value) => <span className="text-xs font-black uppercase tracking-wider text-slate-600 mr-4">{value}</span>}
+                  formatter={(value) => <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 mr-4">{value}</span>}
                 />
 
                 {(activeMetric === 'all' || activeMetric === 'income-expense') && (
@@ -1019,10 +1001,10 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
 
       {/* 4. 12-Month Detailed Comparison Table */}
       {(comparisonSection === 'all' || comparisonSection === 'table') && (
-        <div className="bg-white rounded-[2.5rem] shadow-premium border border-slate-100 overflow-hidden">
-          <div className="p-5 sm:p-7 border-b border-slate-100 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-premium border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+          <div className="p-5 sm:p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h3 className="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2">
+              <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
                 <Award size={18} className="text-primary" />
                 12-Month Performance Matrix
               </h3>
@@ -1030,7 +1012,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                 Complete month-by-month financial summary with Cash/Online breakdown and MoM growth
               </p>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 px-3.5 py-1.5 rounded-full font-bold">
+            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3.5 py-1.5 rounded-full font-bold">
               12 Months Breakdown
             </span>
           </div>
@@ -1039,38 +1021,38 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/90 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
                   <th className="py-4 px-4 sm:px-6">Month</th>
-                  <th className="py-4 px-4 sm:px-6 text-emerald-600">Total Income</th>
-                  <th className="py-4 px-4 sm:px-6 text-rose-600">Total Expense</th>
-                  <th className="py-4 px-4 sm:px-6 text-slate-700">Net Profit / Savings</th>
+                  <th className="py-4 px-4 sm:px-6 text-emerald-600 dark:text-emerald-400">Total Income</th>
+                  <th className="py-4 px-4 sm:px-6 text-rose-600 dark:text-rose-400">Total Expense</th>
+                  <th className="py-4 px-4 sm:px-6 text-slate-700 dark:text-slate-200">Net Profit / Savings</th>
                   <th className="py-4 px-4 sm:px-6 text-center">Savings Rate</th>
                   <th className="py-4 px-4 sm:px-6 text-right">MoM Growth</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200">
                 {monthlyData.map((m) => {
                   const hasData = m.income > 0 || m.expense > 0;
                   return (
-                    <tr key={m.monthIndex} className={cn("hover:bg-slate-50/60 transition-colors", !hasData && "opacity-45")}>
+                    <tr key={m.monthIndex} className={cn("hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors", !hasData && "opacity-45")}>
                       {/* Month Name */}
                       <td className="py-4 px-4 sm:px-6">
                         <div className="flex items-center gap-2.5">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-black">
+                          <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-[10px] font-black">
                             {m.monthIndex}
                           </span>
-                          <span className="font-black text-slate-800 text-sm">{m.monthName}</span>
+                          <span className="font-black text-slate-800 dark:text-white text-sm">{m.monthName}</span>
                         </div>
                       </td>
 
                       {/* Income */}
                       <td className="py-4 px-4 sm:px-6">
                         <div className="space-y-0.5">
-                          <span className="font-black text-emerald-600 text-sm">
+                          <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
                             {m.income > 0 ? `+${formatCurrency(m.income)}` : '₹0.00'}
                           </span>
                           {m.income > 0 && (
-                            <p className="text-[10px] text-slate-400 font-bold">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">
                               Cash: ₹{m.cashIncome.toLocaleString()} | Online: ₹{m.onlineIncome.toLocaleString()}
                             </p>
                           )}
@@ -1080,11 +1062,11 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                       {/* Expense */}
                       <td className="py-4 px-4 sm:px-6">
                         <div className="space-y-0.5">
-                          <span className="font-black text-rose-600 text-sm">
+                          <span className="font-black text-rose-600 dark:text-rose-400 text-sm">
                             {m.expense > 0 ? `-${formatCurrency(m.expense)}` : '₹0.00'}
                           </span>
                           {m.expense > 0 && (
-                            <p className="text-[10px] text-slate-400 font-bold">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">
                               Cash: ₹{m.cashSpend.toLocaleString()} | Online: ₹{m.onlineSpend.toLocaleString()}
                             </p>
                           )}
@@ -1095,7 +1077,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                       <td className="py-4 px-4 sm:px-6">
                         <span className={cn(
                           "font-black text-sm px-3 py-1 rounded-xl inline-block",
-                          m.net > 0 ? "bg-emerald-50 text-emerald-700" : m.net < 0 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"
+                          m.net > 0 ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : m.net < 0 ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                         )}>
                           {formatCurrency(m.net)}
                         </span>
@@ -1103,7 +1085,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
 
                       {/* Savings Rate */}
                       <td className="py-4 px-4 sm:px-6 text-center">
-                        <span className="text-xs font-black text-slate-700">
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-200">
                           {hasData && m.income > 0 ? `${m.savingsRate}%` : '—'}
                         </span>
                       </td>
@@ -1113,13 +1095,13 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                         {m.incomeMoM !== null ? (
                           <span className={cn(
                             "inline-flex items-center gap-0.5 text-[11px] font-black px-2.5 py-0.5 rounded-md",
-                            m.incomeMoM >= 0 ? "text-emerald-700 bg-emerald-50" : "text-rose-700 bg-rose-50"
+                            m.incomeMoM >= 0 ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40" : "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40"
                           )}>
                             {m.incomeMoM >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                             {m.incomeMoM >= 0 ? `+${m.incomeMoM}%` : `${m.incomeMoM}%`}
                           </span>
                         ) : (
-                          <span className="text-slate-300 font-bold text-xs">—</span>
+                          <span className="text-slate-400 dark:text-slate-600 font-bold text-xs">—</span>
                         )}
                       </td>
                     </tr>
@@ -1130,7 +1112,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
           </div>
 
           {/* 2. Mobile Clean Performance Cards List */}
-          <div className="block md:hidden divide-y divide-slate-100">
+          <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
             {monthlyData.map((m) => {
               const hasData = m.income > 0 || m.expense > 0;
               return (
@@ -1138,21 +1120,21 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   {/* Month Header Row */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-black">
+                      <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px] font-black">
                         {m.monthIndex}
                       </span>
-                      <span className="font-black text-slate-800 text-sm">{m.monthName}</span>
+                      <span className="font-black text-slate-800 dark:text-white text-sm">{m.monthName}</span>
                     </div>
                     
                     {hasData ? (
                       <span className={cn(
                         "font-black text-xs px-2.5 py-0.5 rounded-lg",
-                        m.net > 0 ? "bg-emerald-50 text-emerald-700" : m.net < 0 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"
+                        m.net > 0 ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : m.net < 0 ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                       )}>
                         Net: {formatCurrency(m.net)} {m.income > 0 && `(${m.savingsRate}%)`}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-slate-300 uppercase">No Data</span>
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase">No Data</span>
                     )}
                   </div>
 
@@ -1160,19 +1142,19 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   {hasData && (
                     <div className="grid grid-cols-2 gap-2">
                       {/* Income Box */}
-                      <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100/80">
-                        <p className="text-[9px] font-black uppercase text-emerald-700 tracking-wider">Income</p>
-                        <p className="text-sm font-black text-emerald-600">+{formatCurrency(m.income)}</p>
-                        <p className="text-[8px] font-bold text-emerald-800/60 truncate mt-0.5">
+                      <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100/80 dark:border-emerald-900/40">
+                        <p className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">Income</p>
+                        <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">+{formatCurrency(m.income)}</p>
+                        <p className="text-[8px] font-bold text-emerald-800/60 dark:text-emerald-300/60 truncate mt-0.5">
                           Cash: ₹{m.cashIncome.toLocaleString()} • UPI: ₹{m.onlineIncome.toLocaleString()}
                         </p>
                       </div>
 
                       {/* Expense Box */}
-                      <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-100/80">
-                        <p className="text-[9px] font-black uppercase text-rose-700 tracking-wider">Expense</p>
-                        <p className="text-sm font-black text-rose-600">-{formatCurrency(m.expense)}</p>
-                        <p className="text-[8px] font-bold text-rose-800/60 truncate mt-0.5">
+                      <div className="p-2.5 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100/80 dark:border-rose-900/40">
+                        <p className="text-[9px] font-black uppercase text-rose-700 dark:text-rose-400 tracking-wider">Expense</p>
+                        <p className="text-sm font-black text-rose-600 dark:text-rose-400">-{formatCurrency(m.expense)}</p>
+                        <p className="text-[8px] font-bold text-rose-800/60 dark:text-rose-300/60 truncate mt-0.5">
                           Cash: ₹{m.cashSpend.toLocaleString()} • UPI: ₹{m.onlineSpend.toLocaleString()}
                         </p>
                       </div>
@@ -1187,17 +1169,17 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
 
       {/* 5. Category-Wise Expense Comparison Matrix (Positioned at the end) */}
       {(comparisonSection === 'all' || comparisonSection === 'categories') && (
-        <section className="bg-white p-5 sm:p-7 rounded-[2.5rem] shadow-premium border border-slate-100 space-y-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <section className="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-[2.5rem] shadow-premium border border-slate-100 dark:border-slate-800 space-y-6 transition-colors">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="text-lg sm:text-xl font-black text-slate-800 flex items-center gap-2.5">
+                <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-spend/10 text-spend flex items-center justify-center shrink-0">
                     <PieIcon size={16} />
                   </div>
                   <span>Category-Wise Expense Comparison ({selectedYear})</span>
                 </h3>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 px-3 py-1 rounded-full border border-rose-100 whitespace-nowrap">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 px-3 py-1 rounded-full border border-rose-100 dark:border-rose-900/50 whitespace-nowrap">
                   Total Spend: -{formatCurrency(annualSummary.totalExpense)}
                 </span>
               </div>
@@ -1215,12 +1197,12 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   value={categorySearchQuery}
                   onChange={(e) => setCategorySearchQuery(e.target.value)}
                   placeholder="Search category..."
-                  className="pl-8 pr-7 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none focus:border-primary/50 focus:bg-white w-40 sm:w-48 transition-all h-9"
+                  className="pl-8 pr-7 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary/50 focus:bg-white dark:focus:bg-slate-800 w-40 sm:w-48 transition-all h-9"
                 />
                 {categorySearchQuery && (
                   <button
                     onClick={() => setCategorySearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                     title="Clear search"
                   >
                     <X size={12} />
@@ -1231,9 +1213,9 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
               {/* Merge / Split Categories Button */}
               <button
                 onClick={() => setIsMergeModalOpen(true)}
-                className="h-9 px-3.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs whitespace-nowrap shrink-0"
+                className="h-9 px-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80 text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs whitespace-nowrap shrink-0"
               >
-                <Layers size={14} className="text-amber-600" />
+                <Layers size={14} className="text-amber-600 dark:text-amber-400" />
                 <span>Merge / Split</span>
                 {Object.keys(mergedGroups).length > 0 && (
                   <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-black">
@@ -1249,8 +1231,8 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
               No category expense records found for Year {selectedYear}.
             </div>
           ) : filteredCategoryComparison.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
-              No category found matching "<span className="text-slate-700 font-black">{categorySearchQuery}</span>".
+            <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+              No category found matching "<span className="text-slate-700 dark:text-slate-200 font-black">{categorySearchQuery}</span>".
               <button 
                 onClick={() => setCategorySearchQuery('')}
                 className="block mx-auto mt-2 text-xs font-black text-primary hover:underline cursor-pointer"
@@ -1268,7 +1250,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                     setDrilldownMonthFilter('all');
                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                   }}
-                  className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/70 hover:border-primary/50 hover:bg-white hover:shadow-lg transition-all space-y-3 cursor-pointer active:scale-[0.99] group relative"
+                  className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/80 hover:border-primary/50 dark:hover:border-primary/50 hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg transition-all space-y-3 cursor-pointer active:scale-[0.99] group relative"
                 >
                   {/* Category Header */}
                   <div className="flex items-start justify-between gap-2">
@@ -1277,13 +1259,13 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                         {cat.name}
                       </span>
                       {cat.isMergedGroup && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase flex items-center gap-1">
-                          <Layers size={10} className="text-amber-600" />
+                        <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-[10px] font-black uppercase flex items-center gap-1">
+                          <Layers size={10} className="text-amber-600 dark:text-amber-400" />
                           Merged ({cat.subCategories.length})
                         </span>
                       )}
                     </div>
-                    <span className="text-xs font-black text-slate-800 shrink-0">
+                    <span className="text-xs font-black text-slate-800 dark:text-white shrink-0">
                       {cat.percentageOfTotal}% of Total
                     </span>
                   </div>
@@ -1292,7 +1274,7 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   {cat.isMergedGroup && (
                     <div className="flex items-center gap-1 flex-wrap pt-0.5">
                       {cat.subCategories.map((sub, i) => (
-                        <span key={i} className="text-[10px] font-bold text-slate-500 bg-white/80 px-1.5 py-0.5 rounded border border-slate-200 truncate max-w-[120px]">
+                        <span key={i} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 truncate max-w-[120px]">
                           {sub}
                         </span>
                       ))}
@@ -1302,14 +1284,14 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   {/* Amount and Progress Bar */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-baseline">
-                      <span className="text-lg font-black text-rose-600">
+                      <span className="text-lg font-black text-rose-600 dark:text-rose-400">
                         -{formatCurrency(cat.total)}
                       </span>
                       <span className="text-[11px] font-bold text-slate-400">
                         {cat.transactionCount} entries
                       </span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-slate-200/80 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-slate-200/80 dark:bg-slate-700 overflow-hidden">
                       <div 
                         className="h-full rounded-full transition-all duration-500" 
                         style={{ width: `${Math.max(cat.percentageOfTotal, 4)}%`, backgroundColor: cat.color }} 
@@ -1318,19 +1300,19 @@ export const ComparisonView = ({ onBack, entries = [] }) => {
                   </div>
 
                   {/* Monthly Stats */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-[11px]">
                     <div>
                       <p className="text-slate-400 font-bold text-[9px] uppercase">Peak Month</p>
-                      <p className="font-black text-slate-700 truncate">{cat.peakMonthName} ({formatCurrency(cat.peakMonthSpend)})</p>
+                      <p className="font-black text-slate-700 dark:text-slate-200 truncate">{cat.peakMonthName} ({formatCurrency(cat.peakMonthSpend)})</p>
                     </div>
                     <div>
                       <p className="text-slate-400 font-bold text-[9px] uppercase">Monthly Avg</p>
-                      <p className="font-black text-slate-700 truncate">{formatCurrency(cat.avgMonthlySpend)} / mo</p>
+                      <p className="font-black text-slate-700 dark:text-slate-200 truncate">{formatCurrency(cat.avgMonthlySpend)} / mo</p>
                     </div>
                   </div>
 
                   {/* Drilldown indicator */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-black text-primary group-hover:text-primary-dark">
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-black text-primary group-hover:text-primary-dark">
                     <span>View all {cat.transactionCount} transactions</span>
                     <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                   </div>
